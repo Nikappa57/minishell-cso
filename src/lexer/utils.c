@@ -13,6 +13,8 @@ TokenType check_operator(char *s)
 		return (T_RED_OUT);
 	if (strncmp(s, "<", 1) == 0)
 		return (T_RED_IN);
+	if (strncmp(s, "|", 1) == 0)
+		return (T_PIPE);
 	return (T_NONE);
 }
 
