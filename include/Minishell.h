@@ -7,6 +7,8 @@
 # include <readline/history.h>
 # include <unistd.h>
 # include <string.h>
+# include <stdlib.h>
+# include <assert.h>
 
 # include "LinkedList.h"
 
@@ -21,7 +23,6 @@
 
 /* ERROR code */
 
-# define EXIT_SUCCESS 1
 # define EXIT_ERROR 1
 
 /* others */
@@ -52,9 +53,8 @@ typedef enum {
 	
 } TokenType;
 
-const int OP_LEN[] = {1, 1, 1, 2, 2};
-const char* TOKEN_NAME[] = {"T_PIPE", "T_RED_IN", "T_RED_OUT", "T_RED_OUT_APP",
-							"T_HEREDOC", "T_WORD", "T_NONE"};
+extern const int OP_LEN[];
+extern const char* TOKEN_NAME[];
 
 // Token
 typedef struct {
@@ -70,7 +70,7 @@ void		Token_print(Token *t);
 
 void		Lexer_init(ListHead *l);
 int			Lexer_line(ListHead *l, char *str);
-int			Lexer_print(ListHead *l);
+void		Lexer_print(ListHead *l);
 void		Lexer_clear(ListHead *l);
 
 
@@ -80,7 +80,6 @@ TokenType	check_operator(char *s);
 void		skip_ws(char **s);
 bool		eol(char *s);
 void		error(char *err, int code);
-void		check(bool cond, char *name);
 
 // quote mask
 # define M_SINGLE_Q 1

@@ -4,31 +4,34 @@ void Lexer_init(ListHead *l) {
 	List_init(l);
 }
 
+/*
+* return 0: OK, -1: ERR -> skip other steps
+*/
 int Lexer_line(ListHead *l, char *str) {
 	if (!str || !*str)
-		return ;
+		return -1;
 	if (strlen(str) > MAX_LINE_LEN)
-		return (error(MAX_LINE_LEN, EXIT_ERROR), -1);
+		return (error(ERR_MAX_LINE_LENGHT, EXIT_ERROR), -1);
 
 	while (42) {
-		Token *token = (Token *) malloc(sizeof(token));
+		Token *token = (Token *) malloc(sizeof(Token));
 		assert(token && "malloc token");
 		Token_init(token);
 
 		skip_ws(&str);
-		if (efl(str)) return ;	// end
+		if (eol(str)) return 0;	// end
 
 		// operator
 		TokenType tt = check_operator(str);
 		if (tt != T_NONE) {  // operator found
 			str += OP_LEN[tt];  // skip operator token
 			token->type = tt;
-			List_insert(l, l->last, token);
+			List_insert(l, l->last, (ListItem *)token);
 			continue ;
 		}
 
 		// word
-		char		buf[MAX_LINE_LEN];
+		char		buf[MAX_LINE_LEN] = {0};
 		size_t		i = 0;
 
 		token->type = T_WORD;
@@ -43,7 +46,7 @@ int Lexer_line(ListHead *l, char *str) {
 			if (*str == '\\') {
 				if (eol(str + 1))
 					return (error(ERR_UNCLUSED_SLASH, EXIT_ERROR), -1);
-				buf[i++] = ++str;
+				buf[i++] = *(++str);
 				continue;
 			}
 
@@ -68,9 +71,13 @@ int Lexer_line(ListHead *l, char *str) {
 			// normal char
 			buf[i++] = *str++;
 		}
-		// i -> len
 		buf[i] = 0;
-		strncpy(token->text, buf, MAX_LINE_LEN);
+		printf("BUF: %s\n", buf);
+		token->text = (char *) malloc(i + 1);
+		assert(token->text && "malloc token test");
+		strncpy(token->text, buf, i + 1);
+		// add to list
+		List_insert(l, l->last, (ListItem *)token);
 	}
 	return (0);
 }
@@ -79,15 +86,17 @@ void Lexer_print(ListHead *l) {
 	ListItem* aux = l->first;
 	int i = 0;
 
+	printf("--- Lexer print ---\n");
 	while (aux) {
 		printf("[%d] ", i++);
 		Token* t_item = (Token*)(aux);
-		assert(t_item && "FloatList_destroy|ERROR, invalid cast");
+		assert(t_item && "Lexer_print|ERROR, invalid cast");
 		Token_print(t_item);
 		aux = aux->next;
 		if (aux)
 			printf(" | ");
 	}
+	printf("\n");
 
 }
 

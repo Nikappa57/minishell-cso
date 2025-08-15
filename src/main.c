@@ -3,6 +3,10 @@
 unsigned char	g_exit_code = EXIT_SUCCESS;
 bool			g_alive = true;
 
+const int OP_LEN[] = {1, 1, 1, 2, 2};
+const char* TOKEN_NAME[] = {"T_PIPE", "T_RED_IN", "T_RED_OUT", "T_RED_OUT_APP",
+							"T_HEREDOC", "T_WORD", "T_NONE"};
+
 static void shell_loop()
 {
 	char *line;
@@ -19,12 +23,15 @@ static void shell_loop()
 		}
 		if (*line)
 			add_history(line);
-		
-		if (Lexer_line(&lexer, line))
+
+		int ret = Lexer_line(&lexer, line);
+		if (ret == -1) {
+			printf("Lexer line error, skip.\n");
 			continue;
+		}
 		Lexer_print(&lexer);
+		Lexer_clear(&lexer);
 	}
-	Lexer_clear(&lexer);
 	return ;
 }
 

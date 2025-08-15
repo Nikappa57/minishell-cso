@@ -5,13 +5,13 @@ TokenType check_operator(char *s)
 {
 	if (!s || !*s)
 		return (T_NONE);
-	if (ft_strncmp(s, "<<", 2) == 0)
+	if (strncmp(s, "<<", 2) == 0)
 		return (T_HEREDOC);
-	if (ft_strncmp(s, ">>", 2) == 0)
+	if (strncmp(s, ">>", 2) == 0)
 		return (T_RED_OUT_APP);
-	if (ft_strncmp(s, ">", 1) == 0)
+	if (strncmp(s, ">", 1) == 0)
 		return (T_RED_OUT);
-	if (ft_strncmp(s, "<", 1) == 0)
+	if (strncmp(s, "<", 1) == 0)
 		return (T_RED_IN);
 	return (T_NONE);
 }
@@ -19,7 +19,7 @@ TokenType check_operator(char *s)
 /* move pointer after whitespaces */
 void skip_ws(char **s)
 {
-	while (isspace(*s))
+	while (isspace(**s))
 		(*s)++;
 }
 
@@ -29,6 +29,6 @@ bool eol(char *s) {
 
 /* print error and set exit code */
 void error(char *err, int code) {
-	fprintf(stderr, "error: %s\n");
+	fprintf(stderr, "error: %s\n", err);
 	g_exit_code = code;
 }
