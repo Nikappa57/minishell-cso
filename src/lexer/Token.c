@@ -13,3 +13,8 @@ void Token_print(Token *t) {
 		printf(" (%s)", t->text);
 	}
 }
+
+void Token_free(Token *t) {
+	if (t->text)
+		free(t->text);
+}

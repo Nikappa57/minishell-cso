@@ -42,34 +42,34 @@ int Lexer_line(ListHead *l, char *str) {
 				|| check_operator(str) != T_NONE)
 				break;
 
-			// check for '\'
+			// back slash
 			if (*str == '\\') {
 				if (eol(str + 1))
-					return (error(ERR_UNCLUSED_SLASH, EXIT_ERROR), -1);
+					return (error(ERR_UNCLUSED_SLASH, EXIT_ERROR), free(token), -1);
 				buf[i++] = *(++str);
-				continue;
 			}
 
-			// check for " or '
-			if (*str == '"' || *str == '\'') {
-				char c = *str;
-				// skip to next " / '
-				// don't copy " to buf
-				if (c == '"')
-					++str;
-				int j = 0;
-				while (str[j++] != c) {
-					if (eol(str + j))
-						return (error(ERR_UNCLOSED_QUITES, EXIT_ERROR), -1);
+			// quotes
+			else if ((*str == '"') || (*str == '\'')) {
+				char c = *str++; // save quote type and skip it
+				if (c == '\'') // keep ' for expander
+					buf[i++] = '\'';
+				// skip to next quote
+				while (*str != c) {
+					if (eol(str))
+						return (error(ERR_UNCLOSED_QUITES, EXIT_ERROR), free(token), -1);
+					buf[i++] = *str++;
 				}
-				if (c == '"')
-					j--;
-				strncpy(buf + i, str, j);
-				i += j;
-				continue;
+				if (c == '\'') // keep ' for expander
+					buf[i++] = '\'';
+				str++; // skip last quote
 			}
+
 			// normal char
-			buf[i++] = *str++;
+			else {
+				buf[i++] = *str++;
+			}
+				
 		}
 		buf[i] = 0;
 		printf("BUF: %s\n", buf);

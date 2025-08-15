@@ -65,6 +65,7 @@ typedef struct {
 
 void		Token_init(Token *t);
 void		Token_print(Token *t);
+void		Token_free(Token *t);
 
 // Lexer
 
