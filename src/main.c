@@ -1,13 +1,15 @@
-#include "minishell.h"
+#include "Minishell.h"
 
-unsigned char	exit_code = EXIT_SUCCESS;
-bool			alive = true;
+unsigned char	g_exit_code = EXIT_SUCCESS;
+bool			g_alive = true;
 
 static void shell_loop()
 {
 	char *line;
+	ListHead lexer;
 
-	while (alive)
+	Lexer_init(&lexer);
+	while (g_alive)
 	{
 		line = readline(">> ");
 		if (!line)
@@ -17,7 +19,12 @@ static void shell_loop()
 		}
 		if (*line)
 			add_history(line);
+		
+		if (Lexer_line(&lexer, line))
+			continue;
+		Lexer_print(&lexer);
 	}
+	Lexer_clear(&lexer);
 	return ;
 }
 
@@ -31,5 +38,5 @@ int main(int argc, char **argv, char **envp)
 		return (EXIT_ERROR);
 	}
 	shell_loop();
-	return (exit_code);
+	return (g_exit_code);
 }

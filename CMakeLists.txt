@@ -9,6 +9,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # all *.c in src/
 file(GLOB SRCS "${CMAKE_SOURCE_DIR}/src/*.c")
+file(GLOB SRCS "${CMAKE_SOURCE_DIR}/src/*/*.c")
 add_executable(minishell ${SRCS})
 
 # Link readline
