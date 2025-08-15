@@ -42,11 +42,11 @@ int Lexer_line(ListHead *l, char *str) {
 				|| check_operator(str) != T_NONE)
 				break;
 
-			// back slash
+			// backslash
 			if (*str == '\\') {
-				if (eol(str + 1))
+				if (eol(++str)) // skip slash and check if is not closed
 					return (error(ERR_UNCLUSED_SLASH, EXIT_ERROR), free(token), -1);
-				buf[i++] = *(++str);
+				buf[i++] = *(str++); // save next char
 			}
 
 			// quotes
