@@ -39,6 +39,10 @@ int main(int argc, char **argv, char **envp)
 {
 	(void)argv;
 	(void)envp;
+
+	// lexer_test();
+	// return 0;
+
 	if (argc != 1)
 	{
 		fprintf(stderr, ERR_ARG_NOT_ALLOW);

@@ -49,7 +49,7 @@ typedef enum {
 	T_HEREDOC,		// <<
 	
 	T_WORD,			// cmd name, args ecc
-	T_NONE,			// usefull for fun return in some cases
+	T_NONE,			// useful for fun return in some cases
 	
 } TokenType;
 
@@ -74,6 +74,11 @@ int			Lexer_line(ListHead *l, char *str);
 void		Lexer_print(ListHead *l);
 void		Lexer_clear(ListHead *l);
 
+void		lexer_test();
+
+// no expansion marker
+# define NO_EXPAND_MARK '\x1D'
+
 
 /*** utils ***/
 
@@ -82,9 +87,7 @@ void		skip_ws(char **s);
 bool		eol(char *s);
 void		error(char *err, int code);
 
-// quote mask
-# define M_SINGLE_Q 1
-# define M_DOUBLE_Q 2
+
 
 
 #endif

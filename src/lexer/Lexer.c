@@ -43,7 +43,7 @@ int Lexer_line(ListHead *l, char *str) {
 				break;
 
 			// backslash
-			if (*str == '\\') {
+			else if (*str == '\\') {
 				if (eol(++str)) // skip slash and check if is not closed
 					return (error(ERR_UNCLUSED_SLASH, EXIT_ERROR), free(token), -1);
 				buf[i++] = *(str++); // save next char
@@ -52,16 +52,16 @@ int Lexer_line(ListHead *l, char *str) {
 			// quotes
 			else if ((*str == '"') || (*str == '\'')) {
 				char c = *str++; // save quote type and skip it
-				if (c == '\'') // keep ' for expander
-					buf[i++] = '\'';
+				if (c == '\'') // save mark for expander
+					buf[i++] = NO_EXPAND_MARK;
 				// skip to next quote
 				while (*str != c) {
 					if (eol(str))
 						return (error(ERR_UNCLOSED_QUITES, EXIT_ERROR), free(token), -1);
 					buf[i++] = *str++;
 				}
-				if (c == '\'') // keep ' for expander
-					buf[i++] = '\'';
+				if (c == '\'') // save mark for expander
+					buf[i++] = NO_EXPAND_MARK;
 				str++; // skip last quote
 			}
 
@@ -69,10 +69,9 @@ int Lexer_line(ListHead *l, char *str) {
 			else {
 				buf[i++] = *str++;
 			}
-				
 		}
 		buf[i] = 0;
-		printf("BUF: %s\n", buf);
+		// printf("BUF: %s\n", buf);
 		token->text = (char *) malloc(i + 1);
 		assert(token->text && "malloc token test");
 		strncpy(token->text, buf, i + 1);
