@@ -14,38 +14,40 @@ int Lexer_line(ListHead *l, char *str) {
 		return (error(ERR_MAX_LINE_LENGHT, EXIT_ERROR), -1);
 
 	while (42) {
-		Token *token = (Token *) malloc(sizeof(Token));
-		assert(token && "malloc token");
-		Token_init(token);
-
 		skip_ws(&str);
-		if (eol(str)) return 0;	// end
+		if (eol(str))
+			return 0;	// end
+
+		Token *token = (Token *) malloc(sizeof(Token));
+		assert(token && "Lexer_line | malloc token");
+		Token_init(token);
 
 		// operator
 		TokenType tt = check_operator(str);
 		if (tt != T_NONE) {  // operator found
 			str += OP_LEN[tt];  // skip operator token
 			token->type = tt;
-			List_insert(l, l->last, (ListItem *)token);
-			continue ;
+			// insert using token's list member
+			List_insert(l, l->last, &token->list);
+			continue;
 		}
 
 		// word
-		char		buf[MAX_LINE_LEN] = {0};
+		char		buf[MAX_LINE_LEN + 1] = {0};
 		size_t		i = 0;
 
 		token->type = T_WORD;
 		while (21) {
 			// check if word is finished
 			if (eol(str)
-				|| isspace(*str)
+				|| isspace((unsigned char)*str)
 				|| check_operator(str) != T_NONE)
 				break;
 
 			// backslash
 			else if (*str == '\\') {
 				if (eol(++str)) // skip slash and check if is not closed
-					return (error(ERR_UNCLUSED_SLASH, EXIT_ERROR), free(token), -1);
+					return (error(ERR_UNCLOSED_SLASH, EXIT_ERROR), free(token), -1);
 				buf[i++] = *(str++); // save next char
 			}
 
@@ -72,11 +74,11 @@ int Lexer_line(ListHead *l, char *str) {
 		}
 		buf[i] = 0;
 		// printf("BUF: %s\n", buf);
-		token->text = (char *) malloc(i + 1);
-		assert(token->text && "malloc token test");
-		strncpy(token->text, buf, i + 1);
+		assert(i <= MAX_LINE_LEN && "Lexer_line | i > MAX_LINE_LEN");
+		token->text = strndup(buf, i);
+		assert(token->text && "Lexer_line | malloc token test");
 		// add to list
-		List_insert(l, l->last, (ListItem *)token);
+		List_insert(l, l->last, &token->list);
 	}
 	return (0);
 }
@@ -89,7 +91,7 @@ void Lexer_print(ListHead *l) {
 	while (aux) {
 		printf("[%d] ", i++);
 		Token* t_item = (Token*)(aux);
-		assert(t_item && "Lexer_print|ERROR, invalid cast");
+		assert(t_item && "Lexer_print | invalid cast");
 		Token_print(t_item);
 		aux = aux->next;
 		if (aux)
@@ -107,9 +109,10 @@ void Lexer_clear(ListHead *l) {
 	ListItem* aux = l->first;
 	while (aux) {
 		Token* t_item = (Token*)(aux);
-		assert(t_item && "FloatList_destroy|ERROR, invalid cast");
+		assert(t_item && "Lexer_clear | invalid token cast");
 		aux = aux->next;
-		free(t_item);
+		Token_free(t_item);    // free allocated text
+		free(t_item);          // free token struct
 	}
 	List_init(l);
 }

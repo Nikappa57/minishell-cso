@@ -16,10 +16,10 @@
 
 # define EXIT_MSG "exit\n"
 # define ERR_ARG_NOT_ALLOW "Arguments not allowed\n"
-# define ERR_MAX_LINE_LENGHT "max line length\n"
-# define ERR_UNCLOSED_QUITES "Unclosed quotes!"
-# define ERR_UNCLUSED_PIPE "Unclosed pipe!"
-# define ERR_UNCLUSED_SLASH "Unclosed back slash!"
+# define ERR_MAX_LINE_LENGHT "lexer error: max line length\n"
+# define ERR_UNCLOSED_QUITES "lexer error: Unclosed quotes!"
+# define ERR_UNCLOSED_SLASH "lexer error: Unclosed back slash!"
+# define ERR_UNCLOSED_PIPE "Unclosed pipe!"
 
 /* ERROR code */
 

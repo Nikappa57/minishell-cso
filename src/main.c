@@ -32,6 +32,7 @@ static void shell_loop()
 		Lexer_print(&lexer);
 		Lexer_clear(&lexer);
 	}
+	Lexer_clear(&lexer);
 	return ;
 }
 

@@ -36,26 +36,25 @@ void lexer_test() {
 	for (size_t i = 0; i < sizeof(good_test_str) / sizeof(char *); i++) {
 		printf(">> \"%s\"\n", good_test_str[i]);
 		int ret = Lexer_line(&lexer, good_test_str[i]);
-		if (ret == -1) {
+		if (ret == -1)
 			printf("Lexer line error, skip.\n");
-		}
-		else {
+		else 
 			Lexer_print(&lexer);
-			Lexer_clear(&lexer);
-		}
+		Lexer_clear(&lexer);
 	}
+	Lexer_clear(&lexer);
 
 	printf("Error test:\n");
 	for (size_t i = 0; i < sizeof(err_test_str) / sizeof(char *); i++) {
 		printf(">> \"%s\"\n", err_test_str[i]);
 		int ret = Lexer_line(&lexer, err_test_str[i]);
-		if (ret == -1) {
+		if (ret == -1)
 			printf("Lexer line error, skip.\n");
-		}
 		else {
 			Lexer_print(&lexer);
-			Lexer_clear(&lexer);
-			assert(false && "Should be an error");
+			assert(false && "Should raise an error");
 		}
+		Lexer_clear(&lexer);
 	}
+	Lexer_clear(&lexer);
 }
