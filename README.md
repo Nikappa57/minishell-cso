@@ -43,7 +43,9 @@ Le redirection possono essere sovrascritte (es: name > out > out1)
 Simulando quello che succede in bash, sia out che out1 vengono creati
 Un comando senza nome, ma solo con redirection, crea i file delle redirection e termina
 
-line := cmd {T_PIPE cmd};			// non ci possono essere pipe alla fine
+line := pipeline
+
+pipeline := cmd {T_PIPE cmd};			// non ci possono essere pipe alla fine
 
 cmd := item {item};					// almeno un comando o una redirection
 									// un comando con solo redirection è consentito

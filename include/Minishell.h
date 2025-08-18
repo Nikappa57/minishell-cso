@@ -94,12 +94,17 @@ extern const char* RedType_repr[];
 
 typedef struct {
 	ListItem	list;
-	char		*argv;	// argv[0] = cmd_name, argv[1:] = args
+	RedType		type;
+	char		*filename;
+}	Redirection;
+
+
+typedef struct {
+	ListItem	list;
+	char		**argv;	// argv[0] = cmd_name, argv[1:] = args, argv[argc] = None
 	int			argc;
-	// All redirection file will be created, only the last one is used
-	RedType		*red_type_arr;
-	char		*red_filename_arr;
-	int			red_len;
+	// All redirection file will be created, only the last one used
+	ListHead	redirections;
 }	Command;
 
 # define MAX_RED_PER_CMD 10
@@ -107,6 +112,12 @@ typedef struct {
 void		Command_init(Command *c);
 void		Command_print(Command *c);
 void		Command_free(Command *c);
+
+// Parser
+
+void		Parser_init(ListHead *l);
+void		Parser_line(ListHead *l);
+void		Parser_clear(ListHead *l);
 
 /*** utils ***/
 

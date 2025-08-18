@@ -8,7 +8,7 @@ void Token_init(Token *t) {
 
 void Token_print(Token *t) {
 	// Print token type and, for words, the text in quotes
-	printf("%s", TOKEN_NAME[t->type]);
+	printf("%s", TokenType_repr[t->type]);
 	if (t->type == T_WORD) {
 		assert(t->text && "Token_print|Text is null");
 		printf(" :\"");
