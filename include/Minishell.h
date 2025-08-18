@@ -54,13 +54,13 @@ typedef enum {
 } TokenType;
 
 extern const int OP_LEN[];
-extern const char* TOKEN_NAME[];
+extern const char* TokenType_repr[];
 
 // Token
 typedef struct {
-	ListItem		list;
-	TokenType		type;
-	char			*text;	// for T_WORD type
+	ListItem	list;
+	TokenType	type;
+	char		*text;	// for T_WORD type
 } Token;
 
 void		Token_init(Token *t);
@@ -79,6 +79,34 @@ void		lexer_test();
 // no expansion marker
 # define NO_EXPAND_MARK '\x1D'
 
+/* Parser */
+
+// Command
+
+typedef enum {
+	R_IN = 1,	// same number of TokenType
+	R_OUT,
+	R_APP,
+	R_HD,
+}	RedType;
+
+extern const char* RedType_repr[];
+
+typedef struct {
+	ListItem	list;
+	char		*argv;	// argv[0] = cmd_name, argv[1:] = args
+	int			argc;
+	// All redirection file will be created, only the last one is used
+	RedType		*red_type_arr;
+	char		*red_filename_arr;
+	int			red_len;
+}	Command;
+
+# define MAX_RED_PER_CMD 10
+
+void		Command_init(Command *c);
+void		Command_print(Command *c);
+void		Command_free(Command *c);
 
 /*** utils ***/
 
@@ -86,8 +114,5 @@ TokenType	check_operator(char *s);
 void		skip_ws(char **s);
 bool		eol(char *s);
 void		error(char *err, int code);
-
-
-
 
 #endif
