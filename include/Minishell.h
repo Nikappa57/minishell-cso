@@ -61,7 +61,7 @@ typedef struct {
 	ListItem	list;
 	TokenType	type;
 	char		*text;	// for T_WORD type
-} Token;
+}	Token;
 
 void		Token_init(Token *t);
 void		Token_print(Token *t);
@@ -112,12 +112,20 @@ typedef struct {
 void		Command_init(Command *c);
 void		Command_print(Command *c);
 void		Command_free(Command *c);
+void		Command_add_arg(Command *c, const char *s);
+void		Command_add_redirection(Command *c, RedType type, const char *s);
 
 // Parser
 
-void		Parser_init(ListHead *l);
-void		Parser_line(ListHead *l);
-void		Parser_clear(ListHead *l);
+typedef struct {
+	ListHead	*cmd_list;
+	Token		*current_token;
+}	Parser;
+
+void		Parser_init(Parser *p, ListHead *token_list);
+int			Parser_item(Parser *p, Command *c, bool required);
+int			Parser_line(Parser *p);
+void		Parser_clear(Parser *p);
 
 /*** utils ***/
 
