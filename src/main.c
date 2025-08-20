@@ -9,6 +9,7 @@ const char* TokenType_repr[] = {"T_PIPE", "T_RED_IN", "T_RED_OUT", "T_RED_OUT_AP
 const char* TokenType_str[] = {"|", "<", ">", ">>",
 							"<<", "word", "newline"};
 const char* RedType_repr[] = {"R_IN", "R_OUT", "R_APP", "R_HD"};
+const char* RedType_str[] = {"<", ">", ">>", "<<"};
 
 static void shell_loop()
 {

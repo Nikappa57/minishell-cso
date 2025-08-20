@@ -25,7 +25,7 @@ void Command_print(Command *c) {
 			item != NULL; item = item->next) {
 		Redirection* r_item = (Redirection*)(item);
 		assert(r_item && "Command_print | invalid cast");
-		printf(" '%s' '%s' ", RedType_repr[r_item->type], r_item->filename);
+		printf("'%s' '%s' ", RedType_str[r_item->type], r_item->filename);
 	}
 	printf("\n");
 }

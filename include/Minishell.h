@@ -85,13 +85,14 @@ void		lexer_test();
 // Command
 
 typedef enum {
-	R_IN = 1,	// same number of TokenType
+	R_IN,	// same number of TokenType
 	R_OUT,
 	R_APP,
 	R_HD,
 }	RedType;
 
 extern const char* RedType_repr[];
+extern const char* RedType_str[];
 
 typedef struct {
 	ListItem	list;
