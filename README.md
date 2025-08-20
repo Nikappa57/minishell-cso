@@ -50,7 +50,7 @@ pipeline := cmd {T_PIPE cmd};			// non ci possono essere pipe alla fine
 cmd := item {item};					// almeno un comando o una redirection
 									// un comando con solo redirection è consentito
 
-cmd := T_WORD
+item := T_WORD
 		| T_RED_OUT		T_WORD
 		| T_RED_OUT_APP	T_WORD
 		| T_RED_IN		T_WORD

@@ -6,7 +6,7 @@ void Command_init(Command *c) {
 	c->argv = (char **) malloc(sizeof(char *));
 	assert(c->argv && "Command_init | malloc error");
 	c->argv[0] = 0;
-	List_init(&c->list);
+	List_init(&c->redirections);
 }
 
 void Command_print(Command *c) {
@@ -15,8 +15,8 @@ void Command_print(Command *c) {
 		printf("CMD {%s} [", c->argv[0]);
 		for (int i = 1; i < c->argc; ++i) {
 			printf("%s", c->argv[i]);
-			if (i + 1 < c->argv[i])
-				printf("%s, ");
+			if (i + 1 < c->argc)
+				printf(", ");
 		}
 		printf("]");
 	}
@@ -46,11 +46,12 @@ void Command_free(Command *c) {
 
 	// argv
 	if (c->argv) {
-		for (int i = 0; i < c->argv + 1; i++) {
+		for (int i = 0; i < c->argc + 1; i++) {
 			free(c->argv[i]);
 		}
 		free(c->argv);
-		c->argv = c->argc = 0;
+		c->argv = 0;
+		c->argc = 0;
 	}
 }
 
@@ -67,5 +68,5 @@ void Command_add_redirection(Command *c, RedType type, const char *s) {
 	r->list.next = r->list.prev = 0;
 	r->type = type;
 	r->filename = strdup(s);
-	List_insert(&c->redirections, &c->redirections.last, &r->list);
+	List_insert(&c->redirections, c->redirections.last, &r->list);
 }
