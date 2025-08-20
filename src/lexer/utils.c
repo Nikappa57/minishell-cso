@@ -1,6 +1,6 @@
 # include "Minishell.h"
 
-/* Check if is operation, skip operator and return operator token type */
+/* Check if is operation and return operator token type */
 TokenType check_operator(char *s)
 {
 	if (!s || !*s)

@@ -49,12 +49,13 @@ typedef enum {
 	T_HEREDOC,		// <<
 	
 	T_WORD,			// cmd name, args ecc
-	T_NONE,			// useful for fun return in some cases
+	T_NONE,			// useful for fun return in some cases and lexer enf of line
 	
 } TokenType;
 
 extern const int OP_LEN[];
 extern const char* TokenType_repr[];
+extern const char* TokenType_str[];
 
 // Token
 typedef struct {
@@ -118,14 +119,14 @@ void		Command_add_redirection(Command *c, RedType type, const char *s);
 // Parser
 
 typedef struct {
-	ListHead	*cmd_list;
+	ListHead	cmd_list;
 	Token		*current_token;
 }	Parser;
 
 void		Parser_init(Parser *p, ListHead *token_list);
-int			Parser_item(Parser *p, Command *c, bool required);
-int			Parser_line(Parser *p);
+int			Parser_pipeline(Parser *p);
 void		Parser_clear(Parser *p);
+void		Parser_print(Parser *p);
 
 /*** utils ***/
 
@@ -133,5 +134,8 @@ TokenType	check_operator(char *s);
 void		skip_ws(char **s);
 bool		eol(char *s);
 void		error(char *err, int code);
+void		error_tok(char *err, char *token, int code);
+
+RedType		token_to_red(TokenType t);
 
 #endif

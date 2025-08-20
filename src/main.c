@@ -6,13 +6,15 @@ bool			g_alive = true;
 const int OP_LEN[] = {1, 1, 1, 2, 2};
 const char* TokenType_repr[] = {"T_PIPE", "T_RED_IN", "T_RED_OUT", "T_RED_OUT_APP",
 							"T_HEREDOC", "T_WORD", "T_NONE"};
+const char* TokenType_str[] = {"|", "<", ">", ">>",
+							"<<", "word", "newline"};
 const char* RedType_repr[] = {"R_IN", "R_OUT", "R_APP", "R_HD"};
 
 static void shell_loop()
 {
 	char *line;
 	ListHead lexer;
-
+	Parser parser;
 	Lexer_init(&lexer);
 	while (g_alive)
 	{
@@ -27,10 +29,26 @@ static void shell_loop()
 
 		int ret = Lexer_line(&lexer, line);
 		if (ret == -1) {
-			printf("Lexer line error, skip.\n");
+			printf("Lexer line error, skip.\n"); // TODO: to remove
+			Lexer_clear(&lexer);
 			continue;
 		}
 		Lexer_print(&lexer);
+		
+		// parser
+		Parser_init(&parser, &lexer);
+
+		ret = Parser_pipeline(&parser);
+		if (ret == -1) {
+			printf("Parser line error, skip.\n"); // TODO: to remove
+			Lexer_clear(&lexer);
+			Parser_clear(&parser);
+			continue;
+		}
+		Parser_print(&parser);
+		Parser_clear(&parser);
+
+		// clear lexer
 		Lexer_clear(&lexer);
 	}
 	Lexer_clear(&lexer);

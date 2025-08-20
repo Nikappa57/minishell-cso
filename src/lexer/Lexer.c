@@ -15,8 +15,7 @@ int Lexer_line(ListHead *l, char *str) {
 
 	while (42) {
 		skip_ws(&str);
-		if (eol(str))
-			return 0;	// end
+		if (eol(str)) break;	// end
 
 		Token *token = (Token *) malloc(sizeof(Token));
 		assert(token && "Lexer_line | malloc token");
@@ -80,6 +79,11 @@ int Lexer_line(ListHead *l, char *str) {
 		// add to list
 		List_insert(l, l->last, &token->list);
 	}
+	Token *token = (Token *) malloc(sizeof(Token));
+	assert(token && "Lexer_line | malloc token");
+	Token_init(token); // Token type = T_NONE
+	// add to list T_NONE as end of line
+	List_insert(l, l->last, &token->list);
 	return (0);
 }
 

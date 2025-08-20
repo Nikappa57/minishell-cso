@@ -12,21 +12,20 @@ void Command_init(Command *c) {
 void Command_print(Command *c) {
 	// argv
 	if (c->argv && c->argc > 0) {
-		printf("CMD {%s} [", c->argv[0]);
+		printf("CMD '%s' {", c->argv[0]);
 		for (int i = 1; i < c->argc; ++i) {
-			printf("%s", c->argv[i]);
+			printf("'%s'", c->argv[i]);
 			if (i + 1 < c->argc)
 				printf(", ");
 		}
-		printf("]");
+		printf("} ");
 	}
 	// red
-	printf("RED: ");
 	for (ListItem *item = c->redirections.first;
 			item != NULL; item = item->next) {
 		Redirection* r_item = (Redirection*)(item);
 		assert(r_item && "Command_print | invalid cast");
-		printf(" %s %s ", RedType_repr[r_item->type], r_item->filename);
+		printf(" '%s' '%s' ", RedType_repr[r_item->type], r_item->filename);
 	}
 	printf("\n");
 }
