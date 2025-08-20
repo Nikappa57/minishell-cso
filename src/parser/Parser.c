@@ -14,8 +14,8 @@ void Parser_clear(ListHead *p) {
 		Command* c_item = (Command*)(aux);
 		assert(c_item && "Parser_clear | invalid token cast");
 		aux = aux->next;
-		Command_free(c_item);    // free allocated text
-		free(c_item);          // free token struct
+		Command_free(c_item);
+		free(c_item);
 	}
 	List_init(p);
 }
