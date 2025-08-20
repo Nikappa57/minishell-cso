@@ -27,7 +27,7 @@
 
 /* others */
 
-# define MAX_CMDS 100
+# define MAX_CMDS 64 // Prevent fork bombing
 # define MAX_LINE_LEN 4096
 
 /* global vars */

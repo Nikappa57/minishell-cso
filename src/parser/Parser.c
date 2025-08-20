@@ -130,6 +130,8 @@ int Parser_pipeline(Parser *p) {
 		p->current_token = (Token *) p->current_token->list.next; // next
 		ret = Parser_cmd(p);
 		if (ret == -1) return (-1);
+		if (p->cmd_list.size > MAX_CMDS)
+			return (error("Parser: maximum number of commands exceeded", 1), -1);
 	}
 	return (0);
 }
