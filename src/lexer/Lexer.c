@@ -53,16 +53,16 @@ int Lexer_line(ListHead *l, char *str) {
 			// quotes
 			else if ((*str == '"') || (*str == '\'')) {
 				char c = *str++; // save quote type and skip it
-				if (c == '\'') // save mark for expander
-					buf[i++] = NO_EXPAND_MARK;
+				// save mark for expander
+				buf[i++] = c == '\'' ? QUOTE_S_MARK : QUOTE_D_MARK;
 				// skip to next quote
 				while (*str != c) {
 					if (eol(str))
 						return (error(ERR_UNCLOSED_QUITES, EXIT_ERROR), free(token), -1);
 					buf[i++] = *str++;
 				}
-				if (c == '\'') // save mark for expander
-					buf[i++] = NO_EXPAND_MARK;
+				// save mark for expander
+				buf[i++] = c == '\'' ? QUOTE_S_MARK : QUOTE_D_MARK;
 				str++; // skip last quote
 			}
 

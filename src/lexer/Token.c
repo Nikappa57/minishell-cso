@@ -13,8 +13,10 @@ void Token_print(Token *t) {
 		assert(t->text && "Token_print|Text is null");
 		printf(" :\"");
 		for (int i = 0; t->text[i]; i++) {
-			if (t->text[i] == NO_EXPAND_MARK)
-				printf("<NE>");
+			if (t->text[i] == QUOTE_S_MARK)
+				printf("<SQ>");
+			if (t->text[i] == QUOTE_D_MARK)
+				printf("<DQ>");
 			else
 				putchar(t->text[i]);
 		}

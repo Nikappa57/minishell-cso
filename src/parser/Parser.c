@@ -78,7 +78,7 @@ int Parser_item(Parser *p, Command *c) {
 		|| (p->current_token->type == T_RED_OUT)
 		|| (p->current_token->type == T_RED_OUT_APP)
 		|| (p->current_token->type == T_HEREDOC)) {
-		RedType rd = token_to_red(p->current_token->type); // different enum, but same index
+		RedType rd = token_to_red(p->current_token->type);
 		p->current_token = (Token *) p->current_token->list.next; // next
 		if (p->current_token->type != T_WORD) // must be T_WORD
 			return (Parser_error(p), -1);
