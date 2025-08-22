@@ -38,6 +38,7 @@ void Command_free(Command *c) {
 			Redirection* t_item = (Redirection*)(aux);
 			assert(t_item && "Command_free | invalid token cast");
 			aux = aux->next;
+			free(t_item->filename);
 			free(t_item);
 		}
 		List_init(&c->redirections);
