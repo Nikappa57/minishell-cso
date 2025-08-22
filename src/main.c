@@ -1,5 +1,7 @@
 #include "Minishell.h"
 
+// global vars
+
 unsigned char	g_exit_code = EXIT_SUCCESS;
 bool			g_alive = true;
 
@@ -11,11 +13,13 @@ const char* TokenType_str[] = {"|", "<", ">", ">>",
 const char* RedType_repr[] = {"R_IN", "R_OUT", "R_APP", "R_HD"};
 const char* RedType_str[] = {"<", ">", ">>", "<<"};
 
+// main loop
 static void shell_loop()
 {
-	char *line;
-	ListHead lexer;
-	Parser parser;
+	char		*line;
+	ListHead	lexer;
+	Parser		parser;
+
 	Lexer_init(&lexer);
 	while (g_alive)
 	{
@@ -25,41 +29,43 @@ static void shell_loop()
 			fprintf(stderr, EXIT_MSG);
 			break ;
 		}
+		// save line in history
 		if (*line)
 			add_history(line);
-
+		
+		// lexer
 		int ret = Lexer_line(&lexer, line);
 		if (ret == -1) {
-			printf("Lexer line error, skip.\n"); // TODO: to remove
+			if (DEBUG) printf("Lexer line error, skip.\n");
 			Lexer_clear(&lexer);
 			continue;
 		}
-		Lexer_print(&lexer);
+		if (DEBUG) Lexer_print(&lexer);
 		
 		// parser
 		Parser_init(&parser, &lexer);
 
 		ret = Parser_pipeline(&parser);
 		if (ret == -1) {
-			printf("Parser line error, skip.\n"); // TODO: to remove
+			if (DEBUG) printf("Parser line error, skip.\n");
 			Lexer_clear(&lexer);
 			Parser_clear(&parser);
 			continue;
 		}
-		Parser_print(&parser);
+		if (DEBUG) Parser_print(&parser);
 		Parser_clear(&parser);
 
 		// clear lexer
 		Lexer_clear(&lexer);
 	}
 	Lexer_clear(&lexer);
+	Parser_clear(&parser);
 	return ;
 }
 
-int main(int argc, char **argv, char **envp)
+int main(int argc, char **argv)
 {
 	(void)argv;
-	(void)envp;
 
 	// lexer_test();
 	// return 0;
@@ -69,6 +75,10 @@ int main(int argc, char **argv, char **envp)
 		fprintf(stderr, ERR_ARG_NOT_ALLOW);
 		return (EXIT_ERROR);
 	}
+	// init env (shell level)
+	env_init();
+	if (DEBUG) env_print();
+	// start main loop
 	shell_loop();
 	return (g_exit_code);
 }

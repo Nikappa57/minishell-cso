@@ -12,6 +12,12 @@
 
 # include "LinkedList.h"
 
+// Debug
+
+#ifndef DEBUG
+# define DEBUG 1
+#endif
+
 /* ERROR msg */
 
 # define EXIT_MSG "exit\n"
@@ -78,7 +84,8 @@ void		Lexer_clear(ListHead *l);
 void		lexer_test();
 
 // no expansion marker
-# define NO_EXPAND_MARK '\x1D'
+# define QUOTE_S_MARK '\x1D'
+# define QUOTE_D_MARK '\x1E'
 
 /* Parser */
 
@@ -129,7 +136,18 @@ int			Parser_pipeline(Parser *p);
 void		Parser_clear(Parser *p);
 void		Parser_print(Parser *p);
 
+// Env
+
+// global variable in the Glibc
+extern char **environ; 
+
+void		env_init();
+void		env_print();
+int			env_export(const char *name, const char *value);
+int			env_unset(const char *name);
+
 /*** utils ***/
+
 
 TokenType	check_operator(char *s);
 void		skip_ws(char **s);
