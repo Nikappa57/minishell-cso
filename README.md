@@ -55,3 +55,25 @@ item := T_WORD
 		| T_RED_OUT_APP	T_WORD
 		| T_RED_IN		T_WORD
 		| T_HEREDOC		T_WORD;
+
+# Parser
+seguendo com'è definita la sintassi, il parser è implementato usando una funzione per ogni blocco
+ne esce fuori la lista dei comandi, ogni comando ha:
+argc e argv per gli argomenti
+una lista di redirection, tutti i file verranno creati / aperti, ma solo l'ultimo sarà utilzzato come fdin/fdout del comando
+
+
+# Expander
+
+'$' -> '$'
+
+'$?' -> last exit code
+'~' -> $HOME se è il primo carattere e se $HOME è settato, altrimenti resta ~
+$VAR -> espande VAR
+
+nelle redirection non è gestito ambiguous redirect per semplicità
+
+# Heredoc
+
+unica redirection che viene eseguita prima dell'esecuzione, per farla nel processo padre
+Viene preso l'input fino al delimitatore e scritto in una pipe, che poi diventerà l'input del comando

@@ -83,9 +83,10 @@ void		Lexer_clear(ListHead *l);
 
 void		lexer_test();
 
-// no expansion marker
-# define QUOTE_S_MARK '\x1D'
-# define QUOTE_D_MARK '\x1E'
+// quotes marker
+# define MARK_SQ '\x1D' // ' -> MARK_SQ
+# define MARK_DQ '\x1E' // " -> MARK_DQ
+# define MARK_KEY '\x1F' // ` -> MARK_BQ
 
 /* Parser */
 
@@ -139,12 +140,13 @@ void		Parser_print(Parser *p);
 // Env
 
 // global variable in the Glibc
-extern char **environ; 
+extern char	**environ;
 
 void		env_init();
 void		env_print();
 int			env_export(const char *name, const char *value);
 int			env_unset(const char *name);
+void		expander_pipeline(ListHead *pipeline);
 
 /*** utils ***/
 
@@ -153,8 +155,8 @@ TokenType	check_operator(char *s);
 void		skip_ws(char **s);
 bool		eol(char *s);
 void		error(char *err, int code);
-void		error_tok(char *err, char *token, int code);
-
+void		str_append(char **s1, const char* s2);
+void		char_append(char **s1, char c);
 RedType		token_to_red(TokenType t);
 
 #endif

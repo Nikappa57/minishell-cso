@@ -53,8 +53,16 @@ static void shell_loop()
 			continue;
 		}
 		if (DEBUG) Parser_print(&parser);
-		Parser_clear(&parser);
+		
+		// expander (side effect)
+		expander_pipeline(&parser.cmd_list);
+		
+		if (DEBUG) printf("--- After expander ---\n");
+		if (DEBUG) Parser_print(&parser);
 
+		// step clear
+		// clear parser
+		Parser_clear(&parser);
 		// clear lexer
 		Lexer_clear(&lexer);
 	}

@@ -54,7 +54,7 @@ int Lexer_line(ListHead *l, char *str) {
 			else if ((*str == '"') || (*str == '\'')) {
 				char c = *str++; // save quote type and skip it
 				// save mark for expander
-				buf[i++] = c == '\'' ? QUOTE_S_MARK : QUOTE_D_MARK;
+				buf[i++] = c == '\'' ? MARK_SQ : MARK_DQ;
 				// skip to next quote
 				while (*str != c) {
 					if (eol(str))
@@ -62,7 +62,7 @@ int Lexer_line(ListHead *l, char *str) {
 					buf[i++] = *str++;
 				}
 				// save mark for expander
-				buf[i++] = c == '\'' ? QUOTE_S_MARK : QUOTE_D_MARK;
+				buf[i++] = c == '\'' ? MARK_SQ : MARK_DQ;
 				str++; // skip last quote
 			}
 
