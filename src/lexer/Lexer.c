@@ -59,7 +59,8 @@ int Lexer_line(ListHead *l, char *str) {
 				while (*str != c) {
 					if (eol(str))
 						return (error(ERR_UNCLOSED_QUITES, EXIT_ERROR), free(token), -1);
-					buf[i++] = *str++;
+					buf[i++] = (*str == '$') ? MARK_KEY : *str;
+					str++; // skip char
 				}
 				// save mark for expander
 				buf[i++] = c == '\'' ? MARK_SQ : MARK_DQ;
@@ -68,7 +69,8 @@ int Lexer_line(ListHead *l, char *str) {
 
 			// normal char
 			else {
-				buf[i++] = *str++;
+				buf[i++] = (*str == '$') ? MARK_KEY : *str;
+				str++; // skip char
 			}
 		}
 		buf[i] = 0;

@@ -3,7 +3,7 @@
 // $...
 static void expander_key(char **str, char **result) {
 
-	if (!str || !*str || **str != '$')
+	if (!str || !*str || **str != MARK_KEY)
 		return ;
 	++(*str); // skip $
 
@@ -84,7 +84,7 @@ static void expander_str(char **pstr) {
 			copy_until_sq(&str, &result); // side effect
 		}
 		// key
-		else if (*str == '$') {
+		else if (*str == MARK_KEY) {
 			expander_key(&str, &result); // side effect
 		}
 		else {
