@@ -93,14 +93,14 @@ static void expander_str(char **pstr) {
 		}
 	}
 	assert(result && "expander_str | result is Null");
+	free(*pstr);
 	*pstr = result;
 }
 
 void expander_pipeline(ListHead *pipeline) {
-	
 	for (ListItem* c_aux = pipeline->first; c_aux; c_aux = c_aux->next) {
 		Command* c_item = (Command *) (c_aux);
-		assert(c_item && "Parser_clear | invalid token cast");
+		assert(c_item && "expander_pipeline | invalid token cast");
 		
 		// expand cmd args
 		for (int i = 0; i < c_item->argc; i++)
@@ -109,6 +109,8 @@ void expander_pipeline(ListHead *pipeline) {
 		// expand cmd redirections
 		for (ListItem* r_aux = c_item->redirections.first; r_aux; r_aux = r_aux->next) {
 			Redirection *r_item = (Redirection *) (r_aux);
+			assert(r_item && "expander_pipeline | invalid redirection cast");
+
 			expander_str(&r_item->filename);
 		}
 	}

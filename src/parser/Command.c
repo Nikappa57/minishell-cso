@@ -7,6 +7,9 @@ void Command_init(Command *c) {
 	assert(c->argv && "Command_init | malloc error");
 	c->argv[0] = 0;
 	List_init(&c->redirections);
+	// fd
+	c->fdin = STDIN_FILENO;
+	c->fdout = STDOUT_FILENO;
 }
 
 void Command_print(Command *c) {
@@ -28,6 +31,8 @@ void Command_print(Command *c) {
 		printf("'%s' '%s' ", RedType_str[r_item->type], r_item->filename);
 	}
 	printf("\n");
+	// fd
+	printf("FD: in %d out %d\n", c->fdin, c->fdout);
 }
 
 void Command_free(Command *c) {
@@ -46,19 +51,30 @@ void Command_free(Command *c) {
 
 	// argv
 	if (c->argv) {
-		for (int i = 0; i < c->argc + 1; i++) {
-			free(c->argv[i]);
+		for (int i = 0; i < c->argc; ++i) {
+			if (c->argv[i]) free(c->argv[i]);
 		}
 		free(c->argv);
 		c->argv = 0;
 		c->argc = 0;
 	}
+
+	// fd
+	if (c->fdin != STDIN_FILENO) {
+		int ret = close(c->fdin);
+		assert((ret == 0) && "Command_free | close fdin error");
+	}
+	if (c->fdout != STDOUT_FILENO) {
+		int ret = close(c->fdout);
+		assert((ret == 0) && "Command_free | close fdout error");
+	}
 }
 
 void Command_add_arg(Command *c, const char *s) {
-	c->argv = (char **) realloc(c->argv, (++c->argc + 1) * (sizeof(char *)));
+	c->argv = (char **) realloc(c->argv, (++(c->argc) + 1) * (sizeof(char *)));
 	assert(c->argv && "Command_add_arg | realloc error");
 	c->argv[c->argc - 1] = strdup(s);
+	assert(c->argv[c->argc - 1] && "Command_add_arg | strdup error");
 	c->argv[c->argc] = 0;
 }
 
@@ -69,4 +85,20 @@ void Command_add_redirection(Command *c, RedType type, const char *s) {
 	r->type = type;
 	r->filename = strdup(s);
 	List_insert(&c->redirections, c->redirections.last, &r->list);
+}
+
+void Command_set_fdin(Command *c, int fd) {
+	if (c->fdin != STDIN_FILENO) {
+		int ret = close(c->fdin);
+		assert((ret == 0) && "Command_set_fdin | close error");
+	}
+	c->fdin = fd;
+}
+
+void Command_set_fdout(Command *c, int fd) {
+	if (c->fdout != STDOUT_FILENO) {
+		int ret = close(c->fdout);
+		assert((ret == 0) && "Command_set_fdout | close error");
+	}
+	c->fdout = fd;
 }

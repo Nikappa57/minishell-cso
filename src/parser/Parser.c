@@ -11,7 +11,7 @@ void Parser_init(Parser *p, ListHead *token_list) {
 void Parser_clear(Parser *p) {
 	assert(p && "Parser_clear | parser is Null");
 	// free commands
-	if (p->cmd_list.size && p->cmd_list.first) {
+	// if (p->cmd_list.size && p->cmd_list.first) {
 		ListItem* aux = p->cmd_list.first;
 		while (aux) {
 			Command* c_item = (Command*)(aux);
@@ -21,8 +21,7 @@ void Parser_clear(Parser *p) {
 			free(c_item);
 		}
 		List_init(&p->cmd_list);
-	}
-
+	// }
 	p->current_token = NULL;
 }
 
@@ -103,12 +102,12 @@ int Parser_cmd(Parser *p) {
 
 	// if cmd is required, item is required
 	int ret = Parser_item(p, c);
-	if (ret == -1) return (free(c), -1); // -1 error
-	if (ret == 0) return (Parser_error(p), free(c), -1); // item is required
+	if (ret == -1) return (Command_free(c), free(c), -1); // -1 error
+	if (ret == 0) return (Parser_error(p), Command_free(c), free(c), -1); // item is required
 
 	while (ret == 1) {
 		ret = Parser_item(p, c);
-		if (ret == -1) return (free(c), -1);
+		if (ret == -1) return (Command_free(c), free(c), -1);
 	}
 	List_insert(&p->cmd_list, p->cmd_list.last, &c->list);
 	return (1);

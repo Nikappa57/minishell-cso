@@ -115,6 +115,9 @@ typedef struct {
 	int			argc;
 	// All redirection file will be created, only the last one used
 	ListHead	redirections;
+	// fd
+	int			fdin;
+	int			fdout;
 }	Command;
 
 # define MAX_RED_PER_CMD 10
@@ -125,6 +128,8 @@ void		Command_free(Command *c);
 void		Command_add_arg(Command *c, const char *s);
 void		Command_add_redirection(Command *c, RedType type, const char *s);
 
+void		Command_set_fdin(Command *c, int fd);
+void		Command_set_fdout(Command *c, int fd);
 // Parser
 
 typedef struct {
@@ -147,6 +152,9 @@ void		env_print();
 int			env_export(const char *name, const char *value);
 int			env_unset(const char *name);
 void		expander_pipeline(ListHead *pipeline);
+
+// heredoc
+void		heredoc_pipeline(ListHead *pipeline);
 
 /*** utils ***/
 
