@@ -23,7 +23,7 @@
 # define EXIT_MSG "exit\n"
 # define ERR_ARG_NOT_ALLOW "Arguments not allowed\n"
 # define ERR_MAX_LINE_LENGHT "lexer error: max line length\n"
-# define ERR_UNCLOSED_QUITES "lexer error: Unclosed quotes!"
+# define ERR_UNCLOSED_QUOTES "lexer error: Unclosed quotes!"
 # define ERR_UNCLOSED_SLASH "lexer error: Unclosed back slash!"
 # define ERR_UNCLOSED_PIPE "Unclosed pipe!"
 
@@ -35,6 +35,12 @@
 
 # define MAX_CMDS 64 // Prevent fork bombing
 # define MAX_LINE_LEN 4096
+
+/* macro */
+
+#define handle_error(msg) \
+	do { perror(msg); exit(EXIT_FAILURE); } while (0)
+
 
 /* global vars */
 extern unsigned char	g_exit_code;
@@ -106,6 +112,7 @@ typedef struct {
 	ListItem	list;
 	RedType		type;
 	char		*filename;
+	int			hdoc_fd;
 }	Redirection;
 
 
@@ -130,6 +137,7 @@ void		Command_add_redirection(Command *c, RedType type, const char *s);
 
 void		Command_set_fdin(Command *c, int fd);
 void		Command_set_fdout(Command *c, int fd);
+
 // Parser
 
 typedef struct {
@@ -155,6 +163,8 @@ void		expander_pipeline(ListHead *pipeline);
 
 // heredoc
 void		heredoc_pipeline(ListHead *pipeline);
+
+
 
 /*** utils ***/
 

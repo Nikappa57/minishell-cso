@@ -4,7 +4,7 @@ void Command_init(Command *c) {
 	c->list.next = c->list.prev = 0;
 	c->argc = 0;
 	c->argv = (char **) malloc(sizeof(char *));
-	assert(c->argv && "Command_init | malloc error");
+	if (! c->argv) handle_error("Command_init | malloc error");
 	c->argv[0] = 0;
 	List_init(&c->redirections);
 	// fd
@@ -60,37 +60,39 @@ void Command_free(Command *c) {
 	}
 
 	// fd
+	int ret;
 	if (c->fdin != STDIN_FILENO) {
-		int ret = close(c->fdin);
-		assert((ret == 0) && "Command_free | close fdin error");
+		ret = close(c->fdin);
+		if (ret != 0) handle_error("Command_free | close fdin error");
 	}
 	if (c->fdout != STDOUT_FILENO) {
-		int ret = close(c->fdout);
-		assert((ret == 0) && "Command_free | close fdout error");
+		ret = close(c->fdout);
+		if (ret != 0) handle_error("Command_free | close fdout error");
 	}
 }
 
 void Command_add_arg(Command *c, const char *s) {
 	c->argv = (char **) realloc(c->argv, (++(c->argc) + 1) * (sizeof(char *)));
-	assert(c->argv && "Command_add_arg | realloc error");
+	if (! c->argv) handle_error("Command_add_arg | realloc error");
 	c->argv[c->argc - 1] = strdup(s);
-	assert(c->argv[c->argc - 1] && "Command_add_arg | strdup error");
+	if (! c->argv[c->argc - 1]) handle_error("Command_add_arg | strdup error");
 	c->argv[c->argc] = 0;
 }
 
 void Command_add_redirection(Command *c, RedType type, const char *s) {
 	Redirection *r = (Redirection *) malloc(sizeof(Redirection));
-	assert(r && "Command_add_redirection | malloc error");
+	if (! r) handle_error("Command_add_redirection | malloc error");
 	r->list.next = r->list.prev = 0;
 	r->type = type;
 	r->filename = strdup(s);
+	r->hdoc_fd = -1;
 	List_insert(&c->redirections, c->redirections.last, &r->list);
 }
 
 void Command_set_fdin(Command *c, int fd) {
 	if (c->fdin != STDIN_FILENO) {
 		int ret = close(c->fdin);
-		assert((ret == 0) && "Command_set_fdin | close error");
+		if (ret != 0) handle_error("Command_set_fdin | close error");
 	}
 	c->fdin = fd;
 }
@@ -98,7 +100,7 @@ void Command_set_fdin(Command *c, int fd) {
 void Command_set_fdout(Command *c, int fd) {
 	if (c->fdout != STDOUT_FILENO) {
 		int ret = close(c->fdout);
-		assert((ret == 0) && "Command_set_fdout | close error");
+		if (ret != 0) handle_error("Command_set_fdout | close error");
 	}
 	c->fdout = fd;
 }

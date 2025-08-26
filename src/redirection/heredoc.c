@@ -5,7 +5,7 @@ static int heredoc_fd(char *end) {
 	char	*line;
 
 	int ret = pipe(fd);
-	assert((ret == 0) && "heredoc_fd | pipe error");
+	if (ret == -1) handle_error("heredoc_fd | pipe error");
 	while (42)
 	{
 		line = readline("> ");
@@ -20,17 +20,19 @@ static int heredoc_fd(char *end) {
 			break ;
 		}
 		ret = write(fd[1], line, strlen(line));
-		assert(ret != -1 && "heredoc_fd | write error");
+		if (ret == -1) handle_error("heredoc_fd | write error");
 		ret = write(fd[1], "\n", 1);
-		assert(ret != -1 && "heredoc_fd | write error");
+		if (ret == -1) handle_error("heredoc_fd | write error");
 		free(line);
 	}
 	ret = close(fd[1]);
-	assert(ret == 0 && "heredoc_fd | close error");
+	if (ret == -1) handle_error("heredoc_fd | close error");
 	return (fd[0]);
 }
 
 void heredoc_pipeline(ListHead *pipeline) {
+	int ret;
+
 	for (ListItem* c_aux = pipeline->first; c_aux; c_aux = c_aux->next) {
 		Command* c_item = (Command *) (c_aux);
 		assert(c_item && "heredoc_pipeline | invalid token cast");
@@ -41,8 +43,16 @@ void heredoc_pipeline(ListHead *pipeline) {
 			assert(r_item && "expander_pipeline | invalid redirection cast");
 			
 			if (r_item->type == R_HD) {
+				// get hdoc fd
 				int fd = heredoc_fd(r_item->filename);
-				Command_set_fdin(c_item, fd);
+				assert(fd > 2 && "heredoc_pipeline | heredoc_fd invalid fd");
+				// close last hdoc fd
+				if (r_item->hdoc_fd != -1) {
+					ret = close(r_item->hdoc_fd);
+					if (ret == -1) handle_error("heredoc_pipeline | close error");
+				}
+				// save new hdoc fd
+				r_item->hdoc_fd = fd;
 			}
 		}
 	}

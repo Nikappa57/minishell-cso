@@ -36,7 +36,8 @@ static void expander_key(char **str, char **result) {
 	}
 	// copy key
 	char *key = (char *) malloc(len + 1);
-	assert(key && "expander_key | malloc error");
+	if (! key) handle_error("expander_key | malloc error");
+
 	strncpy(key, *str, len);
 	key[len] = 0;
 	// get val
@@ -93,7 +94,7 @@ static void expander_str(char **pstr) {
 		}
 	}
 	assert(result && "expander_str | result is Null");
-	free(*pstr);
+	if (*pstr) free(*pstr);
 	*pstr = result;
 }
 

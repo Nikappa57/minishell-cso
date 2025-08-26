@@ -7,7 +7,7 @@ void str_append(char **dst, const char *src) {
 	size_t a = *dst ? strlen(*dst) : 0;
 	size_t b = strlen(src);
 	char *p = realloc(*dst, a + b + 1);
-	assert(p && "str_append | realloc error");
+	if (! p) handle_error("str_append | realloc error");
 	memcpy(p + a, src, b + 1);
 	*dst = p;
 }

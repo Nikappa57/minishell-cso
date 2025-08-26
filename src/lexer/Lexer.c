@@ -18,7 +18,7 @@ int Lexer_line(ListHead *l, char *str) {
 		if (eol(str)) break;	// end
 
 		Token *token = (Token *) malloc(sizeof(Token));
-		assert(token && "Lexer_line | malloc token");
+		if (! token) handle_error("Lexer_line | malloc token");
 		Token_init(token);
 
 		// operator
@@ -58,7 +58,7 @@ int Lexer_line(ListHead *l, char *str) {
 				// skip to next quote
 				while (*str != c) {
 					if (eol(str))
-						return (error(ERR_UNCLOSED_QUITES, EXIT_ERROR), free(token), -1);
+						return (error(ERR_UNCLOSED_QUOTES, EXIT_ERROR), free(token), -1);
 					buf[i++] = (*str == '$') ? MARK_KEY : *str;
 					str++; // skip char
 				}
@@ -74,17 +74,16 @@ int Lexer_line(ListHead *l, char *str) {
 			}
 		}
 		buf[i] = 0;
-		// printf("BUF: %s\n", buf);
 		assert(i <= MAX_LINE_LEN && "Lexer_line | i > MAX_LINE_LEN");
 		token->text = strndup(buf, i);
-		assert(token->text && "Lexer_line | malloc token test");
+		if (! token->text) handle_error("Lexer_line | malloc token test");
 		// add to list
 		List_insert(l, l->last, &token->list);
 	}
-	Token *token = (Token *) malloc(sizeof(Token));
-	assert(token && "Lexer_line | malloc token");
-	Token_init(token); // Token type = T_NONE
 	// add to list T_NONE as end of line
+	Token *token = (Token *) malloc(sizeof(Token));
+	if (! token) handle_error("Lexer_line | malloc token");
+	Token_init(token); // Token type = T_NONE
 	List_insert(l, l->last, &token->list);
 	return (0);
 }
