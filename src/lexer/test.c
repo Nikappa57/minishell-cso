@@ -1,4 +1,4 @@
-#include "Minishell.h"
+#include "Lexer.h"
 
 void lexer_test() {
 	char * good_test_str[] = {

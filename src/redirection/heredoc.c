@@ -1,4 +1,5 @@
-#include "Minishell.h"
+# include "redirections.h"
+# include "Command.h"
 
 static int heredoc_fd(char *end) {
 	int		fd[2];
@@ -6,16 +7,13 @@ static int heredoc_fd(char *end) {
 
 	int ret = pipe(fd);
 	if (ret == -1) handle_error("heredoc_fd | pipe error");
-	while (42)
-	{
+	while (42) {
 		line = readline("> ");
-		if (!line)
-		{
+		if (!line) {
 			fprintf(stderr, "error: warning: here-document at line 1 delimited by end-of-file (wanted `%s')", end);
 			break ;
 		}
-		if (strcmp(line, end) == 0)
-		{
+		if (strcmp(line, end) == 0) {
 			free(line);
 			break ;
 		}

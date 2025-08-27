@@ -1,4 +1,4 @@
-#include "Minishell.h"
+#include "Command.h"
 
 void Command_init(Command *c) {
 	c->list.next = c->list.prev = 0;

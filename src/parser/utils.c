@@ -1,4 +1,5 @@
-# include "Minishell.h"
+# include "Command.h"
+# include "Token.h"
 
 RedType token_to_red(TokenType t) {
 	RedType rd;

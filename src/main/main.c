@@ -1,4 +1,8 @@
-#include "Minishell.h"
+# include "common.h"
+# include "Lexer.h"
+# include "Parser.h"
+# include "env.h"
+# include "redirections.h"
 
 // main loop
 static void shell_loop() {
@@ -11,7 +15,7 @@ static void shell_loop() {
 		// readline
 		line = readline(">> ");
 		if (!line) { // EOF
-			fprintf(stderr, EXIT_MSG);
+			fprintf(stderr, "exit\n");
 			break ;
 		}
 		if (*line) add_history(line); // save line in history
@@ -62,7 +66,7 @@ int main(int argc, char **argv) {
 	(void)argv;
 	if (argc != 1)
 	{
-		fprintf(stderr, ERR_ARG_NOT_ALLOW);
+		fprintf(stderr, "Arguments not allowed\n");
 		return (EXIT_ERROR);
 	}
 	// init env (updare shell level)

@@ -1,4 +1,4 @@
-# include "Minishell.h"
+# include "Lexer.h"
 
 void Lexer_init(ListHead *l) {
 	List_init(l);
@@ -11,7 +11,7 @@ int Lexer_line(ListHead *l, char *str) {
 	if (!str || !*str)
 		return -1;
 	if (strlen(str) > MAX_LINE_LEN)
-		return (error(ERR_MAX_LINE_LENGHT, EXIT_ERROR), -1);
+		return (error("lexer error: max line length\n", EXIT_ERROR), -1);
 
 	while (42) {
 		skip_ws(&str);
@@ -46,7 +46,7 @@ int Lexer_line(ListHead *l, char *str) {
 			// backslash
 			else if (*str == '\\') {
 				if (eol(++str)) // skip slash and check if is not closed
-					return (error(ERR_UNCLOSED_SLASH, EXIT_ERROR), free(token), -1);
+					return (error("lexer error: Unclosed back slash!", EXIT_ERROR), free(token), -1);
 				buf[i++] = *(str++); // save next char
 			}
 
@@ -58,7 +58,7 @@ int Lexer_line(ListHead *l, char *str) {
 				// skip to next quote
 				while (*str != c) {
 					if (eol(str))
-						return (error(ERR_UNCLOSED_QUOTES, EXIT_ERROR), free(token), -1);
+						return (error("lexer error: Unclosed quotes!", EXIT_ERROR), free(token), -1);
 					buf[i++] = (*str == '$') ? MARK_KEY : *str;
 					str++; // skip char
 				}
@@ -108,16 +108,16 @@ void Lexer_print(ListHead *l) {
 
 void Lexer_clear(ListHead *l) {
 	if (!l->size || !l->first) {
-		return;
+		return ;
 	}
 
-	ListItem* aux = l->first;
+	ListItem *aux = l->first;
 	while (aux) {
-		Token* t_item = (Token*)(aux);
+		Token *t_item = (Token*)(aux);
 		assert(t_item && "Lexer_clear | invalid token cast");
 		aux = aux->next;
-		Token_free(t_item);    // free allocated text
-		free(t_item);          // free token struct
+		Token_free(t_item);
+		free(t_item);
 	}
 	List_init(l);
 }

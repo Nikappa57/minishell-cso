@@ -1,4 +1,4 @@
-#include "Minishell.h"
+# include "common.h"
 
 unsigned char	g_exit_code = EXIT_SUCCESS;
 bool			g_alive = true;
