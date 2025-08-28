@@ -2,6 +2,7 @@
 # include "Lexer.h"
 # include "Parser.h"
 # include "env.h"
+# include "Executor.h"
 # include "redirections.h"
 
 // main loop
@@ -9,8 +10,10 @@ static void shell_loop() {
 	char		*line;
 	ListHead	lexer;
 	Parser		parser;
+	Executor	executer;
 
 	Lexer_init(&lexer);
+	Executor_init(&executer);
 	while (g_alive) {
 		// readline
 		line = readline(">> ");
@@ -52,6 +55,9 @@ static void shell_loop() {
 		if (DEBUG) printf("--- After hdoc ---\n");
 		if (DEBUG) Parser_print(&parser);
 
+		// executer
+		Executor_exe(&executer, &parser.cmd_list);
+
 		// cleanup
 		Parser_clear(&parser);
 		Lexer_clear(&lexer);
@@ -59,6 +65,7 @@ static void shell_loop() {
 		line = 0;
 	}
 	Lexer_clear(&lexer);
+	Executor_clear(&executer);
 	return ;
 }
 
