@@ -1,6 +1,7 @@
 # include "Executor.h"
 # include "Command.h"
 # include "builtin.h"
+# include "redirections.h"
 
 void Executor_init(Executor *e) {
 	List_init(&e->jobs);
@@ -24,6 +25,7 @@ void Executor_clear(Executor *e) {
 void Executor_exe(Executor *e, ListHead *pipeline) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
 
+	int ret;
 	Command *first = (Command *) pipeline->first;
 	assert(first && "Executor_exe | invalid cast");
 
@@ -31,7 +33,31 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 	
 	// run in parent process if is a built in and there is only one cmd
 	if (b_fn && pipeline->size == 1) {
-		g_exit_code = b_fn(first);
+
+		// apply redirections
+		ret = save_stdio();
+		if (ret == -1) {
+			g_exit_code = 1;
+			if (DEBUG) fprintf(stderr, "save_stdio error\n");
+			return ;
+		}
+
+		ret = redirections_apply(first);
+		if (ret == -1) {
+			restore_stdio();
+			g_exit_code = 1;
+			if (DEBUG) fprintf(stderr, "redirections_apply error\n");
+			return ;
+		}
+		
+		// run cmd
+		ret = b_fn(first);
+		g_exit_code = ret & 0xFF;
+
+		if (DEBUG) printf("CMD code: %d\n", g_exit_code);
+
+		// restore stdio
+		restore_stdio();
 		return ;
 	}
 

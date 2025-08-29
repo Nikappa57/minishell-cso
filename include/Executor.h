@@ -5,7 +5,9 @@
 # include <sys/types.h>
 
 typedef struct {
-	ListHead jobs;
+	ListHead	jobs;
+	int			fdin;
+	int			fdout;
 } Executor;
 
 void Executor_init(Executor *e);

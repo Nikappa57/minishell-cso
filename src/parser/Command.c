@@ -8,8 +8,8 @@ void Command_init(Command *c) {
 	c->argv[0] = 0;
 	List_init(&c->redirections);
 	// fd
-	c->fdin = STDIN_FILENO;
-	c->fdout = STDOUT_FILENO;
+	c->fdin = -1;
+	c->fdout = -1;
 }
 
 void Command_print(Command *c) {
@@ -61,13 +61,15 @@ void Command_free(Command *c) {
 
 	// fd
 	int ret;
-	if (c->fdin != STDIN_FILENO) {
+	if (c->fdin > 2) {
 		ret = close(c->fdin);
 		if (ret != 0) handle_error("Command_free | close fdin error");
+		c->fdin = -1;
 	}
-	if (c->fdout != STDOUT_FILENO) {
+	if (c->fdout > 2) {
 		ret = close(c->fdout);
 		if (ret != 0) handle_error("Command_free | close fdout error");
+		c->fdin = -1;
 	}
 }
 
@@ -89,18 +91,40 @@ void Command_add_redirection(Command *c, RedType type, const char *s) {
 	List_insert(&c->redirections, c->redirections.last, &r->list);
 }
 
-void Command_set_fdin(Command *c, int fd) {
-	if (c->fdin != STDIN_FILENO) {
+int Command_set_fdin(Command *c, int fd) {
+	if (c->fdin > 2) {
 		int ret = close(c->fdin);
-		if (ret != 0) handle_error("Command_set_fdin | close error");
+		if (ret == -1) return (perror("close error"), -1);
 	}
 	c->fdin = fd;
+	return (0);
 }
 
-void Command_set_fdout(Command *c, int fd) {
-	if (c->fdout != STDOUT_FILENO) {
+int Command_set_fdout(Command *c, int fd) {
+	if (c->fdout > 2) {
 		int ret = close(c->fdout);
-		if (ret != 0) handle_error("Command_set_fdout | close error");
+		if (ret == -1) return (perror("close error"), -1);
 	}
 	c->fdout = fd;
+	return (0);
+}
+
+int Command_dup2(Command *c) {
+	int ret;
+	printf("DUP: %d %d\n", c->fdin, c->fdout);
+	if (c->fdin > 2) {
+		ret = dup2(c->fdin, STDIN_FILENO);
+		if (ret == -1) return (perror("Command_dup2 | dup2 error (in)"), -1);
+		ret = close(c->fdin);
+		c->fdin = -1;
+		if (ret == -1) return (perror("Command_dup2 | close error (in)"), -1);
+	}
+	if (c->fdout > 2) {
+		ret = dup2(c->fdout, STDOUT_FILENO);
+		if (ret == -1) return (perror("Command_dup2 | dup2 error (out)"), -1);
+		ret = close(c->fdout);
+		c->fdout = -1;
+		if (ret == -1) return (perror("Command_dup2 | close error (out)"), -1);
+	}
+	return (0);
 }

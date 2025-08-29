@@ -37,5 +37,6 @@ void		Command_free(Command *c);
 void		Command_add_arg(Command *c, const char *s);
 void		Command_add_redirection(Command *c, RedType type, const char *s);
 
-void		Command_set_fdin(Command *c, int fd);
-void		Command_set_fdout(Command *c, int fd);
+int			Command_set_fdin(Command *c, int fd);
+int			Command_set_fdout(Command *c, int fd);
+int			Command_dup2(Command *c);
