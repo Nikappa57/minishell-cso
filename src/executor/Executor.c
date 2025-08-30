@@ -42,8 +42,11 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 	}
 	
 	// run cmd
-	ret = b_fn(cmd);
-	g_exit_code = ret & 0xFF;
+	if (b_fn) {
+		ret = b_fn(cmd);
+		g_exit_code = ret & 0xFF;
+	}
+	
 
 	if (DEBUG) printf("CMD code: %d\n", g_exit_code);
 
@@ -54,24 +57,29 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 
 void Executor_exe(Executor *e, ListHead *pipeline) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
-
+	int ret;
 	Command *first = (Command *) pipeline->first;
 	assert(first && "Executor_exe | invalid cast");
 
 	builtin_fn b_fn = find_builtin(first);
 	
-	// run in parent process if is a built in and there is only one cmd
-	if (b_fn && pipeline->size == 1)
+	// run in parent process if is a built in (or only redirections) and there is only one cmd
+	if ((b_fn || first->argc == 0) && pipeline->size == 1)
 		return _Executor_parent(e, first, b_fn);
-	
+
 	// create pipes
 	int n_pipes = (pipeline->size == 1) ? 0 : pipeline->size - 1;
 	int pipes[n_pipes][2];
-	for (int i = 0; i < n_pipes; ++i) {
-		if (pipe(pipes[i]) == -1) {
-			error(1, "pipe: %s", strerror(errno));
-			return;
-		}
+	ret = create_pipes(pipes, n_pipes);
+	if (ret == -1) {
+		if (DEBUG) fprintf(stderr, "create pipe error");
+	}
+
+	// TODO: execute pipeline
+
+	ret = close_pipes(pipes, n_pipes);
+	if (ret == -1) {
+		if (DEBUG) fprintf(stderr, "create pipe error");
 	}
 
 	return error(127, "Command not found");
