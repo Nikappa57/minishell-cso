@@ -8,6 +8,7 @@
 # include <string.h>
 # include <stdlib.h>
 # include <assert.h>
+# include <errno.h>
 
 # include "LinkedList.h"
 
@@ -41,4 +42,4 @@ extern char	**environ;
 
 // utils
 
-void		error(char *err, int code);
+void error(int code, const char *str, ...);

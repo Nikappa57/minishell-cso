@@ -1,10 +1,6 @@
 # include "redirections.h"
 # include "Command.h"
 
-static inline void redirections_error(char *filename) {
-	fprintf(stderr, "%s:%s", filename, strerror(errno));
-}
-
 int redirections_apply(Command *c) {
 	int ret = 0;
 
@@ -17,19 +13,22 @@ int redirections_apply(Command *c) {
 		switch (r->type) {
 			case R_IN:
 				ret = open(r->filename, O_RDONLY);
-				if (ret < 0) return (redirections_error(r->filename), -1);
+				if (ret < 0)
+					return (error(1, "%s : %s", r->filename, strerror(errno)), -1);
 				ret = Command_set_fdin(c, ret);
 				break;
 
 			case R_OUT:
 				ret = open(r->filename, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-				if (ret < 0) return (redirections_error(r->filename), -1);
+				if (ret < 0)
+					return (error(1, "%s : %s", r->filename, strerror(errno)), -1);
 				ret = Command_set_fdout(c, ret);
 				break;
 
 			case R_APP:
 				ret = open(r->filename, O_WRONLY | O_CREAT| O_APPEND, 0644);
-				if (ret < 0) return (redirections_error(r->filename), -1);
+				if (ret < 0)
+					return (error(1, "%s : %s", r->filename, strerror(errno)), -1);
 				ret = Command_set_fdout(c, ret);
 				break;
 

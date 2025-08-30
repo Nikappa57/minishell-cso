@@ -94,7 +94,8 @@ void Command_add_redirection(Command *c, RedType type, const char *s) {
 int Command_set_fdin(Command *c, int fd) {
 	if (c->fdin > 2) {
 		int ret = close(c->fdin);
-		if (ret == -1) return (perror("close error"), -1);
+		if (ret == -1)
+			return (error(1, "close error: %s", strerror(errno)), -1);
 	}
 	c->fdin = fd;
 	return (0);
@@ -103,7 +104,8 @@ int Command_set_fdin(Command *c, int fd) {
 int Command_set_fdout(Command *c, int fd) {
 	if (c->fdout > 2) {
 		int ret = close(c->fdout);
-		if (ret == -1) return (perror("close error"), -1);
+		if (ret == -1)
+			return (error(1, "close error: %s", strerror(errno)), -1);
 	}
 	c->fdout = fd;
 	return (0);
@@ -114,17 +116,21 @@ int Command_dup2(Command *c) {
 	printf("DUP: %d %d\n", c->fdin, c->fdout);
 	if (c->fdin > 2) {
 		ret = dup2(c->fdin, STDIN_FILENO);
-		if (ret == -1) return (perror("Command_dup2 | dup2 error (in)"), -1);
+		if (ret == -1)
+			return (error(1, "Command_dup2 | dup2 error (in): %s", strerror(errno)), -1);
 		ret = close(c->fdin);
 		c->fdin = -1;
-		if (ret == -1) return (perror("Command_dup2 | close error (in)"), -1);
+		if (ret == -1)
+			return (error(1, "Command_dup2 | close error (in): %s", strerror(errno)), -1);
 	}
 	if (c->fdout > 2) {
 		ret = dup2(c->fdout, STDOUT_FILENO);
-		if (ret == -1) return (perror("Command_dup2 | dup2 error (out)"), -1);
+		if (ret == -1)
+			return (error(1, "Command_dup2 | dup2 error (out): %s", strerror(errno)), -1);
 		ret = close(c->fdout);
 		c->fdout = -1;
-		if (ret == -1) return (perror("Command_dup2 | close error (out)"), -1);
+		if (ret == -1)
+			return (error(1, "Command_dup2 | close error (out): %s", strerror(errno)), -1);
 	}
 	return (0);
 }

@@ -26,9 +26,6 @@ static bool env_is_valid_key(const char *s) {
 	return (true);
 }
 
-static void env_error(const char *cmd, const char *arg) {
-	fprintf(stderr, "%s: `%s': not a valid identifier\n", cmd, arg);
-}
 
 void env_print() {
 	printf("--- ENV print ---\n");
@@ -37,11 +34,13 @@ void env_print() {
 }
 
 int env_export(const char *name, const char *value) {
-	if (! env_is_valid_key(name)) return (env_error("export", name), -1);
+	if (! env_is_valid_key(name))
+		return (error(1, "export: `%s': not a valid identifier\n", name), 1);
 	return setenv(name, value ? value : "", /* overwrite= */ 1);
 }
 
 int env_unset(const char *name) {
-	if (! env_is_valid_key(name)) return (env_error("unset", name), -1);
+	if (! env_is_valid_key(name))
+		return (error(1, "unset: `%s': not a valid identifier\n", name), 1);
 	return unsetenv(name);
 }

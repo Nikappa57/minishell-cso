@@ -8,7 +8,7 @@ int save_stdio() {
 	save_out = dup(STDOUT_FILENO);
 	if (save_in < 0 || save_out < 0) {
 		restore_stdio();
-		perror("dup error");
+		error(1, "dup error: %s", strerror(errno));
 		return (-1);
 	}
 	return (0);

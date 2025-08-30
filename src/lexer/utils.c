@@ -28,9 +28,3 @@ void skip_ws(char **s)
 bool eol(char *s) {
 	return (!s || !*s || *s == '\n');
 }
-
-/* print error and set exit code */
-void error(char *err, int code) {
-	fprintf(stderr, "error: %s\n", err);
-	g_exit_code = code;
-}

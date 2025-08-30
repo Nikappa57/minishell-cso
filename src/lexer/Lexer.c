@@ -11,7 +11,7 @@ int Lexer_line(ListHead *l, char *str) {
 	if (!str || !*str)
 		return -1;
 	if (strlen(str) > MAX_LINE_LEN)
-		return (error("lexer error: max line length\n", EXIT_ERROR), -1);
+		return (error(1, "lexer error: max line length\n"), -1);
 
 	while (42) {
 		skip_ws(&str);
@@ -46,7 +46,7 @@ int Lexer_line(ListHead *l, char *str) {
 			// backslash
 			else if (*str == '\\') {
 				if (eol(++str)) // skip slash and check if is not closed
-					return (error("lexer error: Unclosed back slash!", EXIT_ERROR), free(token), -1);
+					return (error(1, "lexer error: Unclosed back slash!"), free(token), -1);
 				buf[i++] = *(str++); // save next char
 			}
 
@@ -58,7 +58,7 @@ int Lexer_line(ListHead *l, char *str) {
 				// skip to next quote
 				while (*str != c) {
 					if (eol(str))
-						return (error("lexer error: Unclosed quotes!", EXIT_ERROR), free(token), -1);
+						return (error(1, "lexer error: Unclosed quotes!"), free(token), -1);
 					buf[i++] = (*str == '$') ? MARK_KEY : *str;
 					str++; // skip char
 				}

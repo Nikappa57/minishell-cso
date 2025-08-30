@@ -52,8 +52,7 @@ void Parser_error(Parser *p) {
 		token_str = TokenType_str[t->type];
 	else
 		token_str = t->text;
-	g_exit_code = 2;
-	fprintf(stderr, "Syntax error: unexpected token '%s'\n", token_str);
+	error(2, "Syntax error: unexpected token '%s'\n", token_str);
 }
 
 /*
@@ -130,7 +129,7 @@ int Parser_pipeline(Parser *p) {
 		ret = Parser_cmd(p);
 		if (ret == -1) return (-1);
 		if (p->cmd_list.size > MAX_CMDS)
-			return (error("Parser: maximum number of commands exceeded", 1), -1);
+			return (error(1, "Parser: maximum number of commands exceeded"), -1);
 	}
 	return (0);
 }
