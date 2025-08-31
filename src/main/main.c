@@ -40,31 +40,33 @@ static void shell_loop() {
 			if (DEBUG) printf("Parser line error, skip.\n");
 			Lexer_clear(&lexer);
 			Parser_clear(&parser);
-			free(line);
 			continue;
 		}
 		if (DEBUG) Parser_print(&parser);
-		
+
 		// expander
-		expander_pipeline(&parser.cmd_list);
+		expander_pipeline(&parser.pipeline);
 		if (DEBUG) printf("--- After expander ---\n");
 		if (DEBUG) Parser_print(&parser);
 
 		// here document
-		heredoc_pipeline(&parser.cmd_list);
+		heredoc_pipeline(&parser.pipeline);
 		if (DEBUG) printf("--- After hdoc ---\n");
 		if (DEBUG) Parser_print(&parser);
 
 		// executer
-		Executor_exe(&executer, &parser.cmd_list);
+		Executor_exe(&executer, &parser.pipeline);
 
 		// cleanup
 		Parser_clear(&parser);
 		Lexer_clear(&lexer);
-		free(line);
+		if (line) free(line);
 		line = 0;
 	}
+	// cleanup
+	Parser_clear(&parser);
 	Lexer_clear(&lexer);
+	if (line) free(line);
 	Executor_clear(&executer);
 	return ;
 }

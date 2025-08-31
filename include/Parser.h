@@ -8,7 +8,7 @@
 # define MAX_CMDS 64 // Prevent fork bombing
 
 typedef struct {
-	ListHead	cmd_list;
+	ListHead	pipeline;
 	Token		*current_token;
 }	Parser;
 

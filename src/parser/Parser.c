@@ -1,8 +1,9 @@
-#include "Parser.h"
+# include "Parser.h"
+# include "Pipeline.h"
 
 void Parser_init(Parser *p, ListHead *token_list) {
 	assert(p && "Parser_init | parser is Null");
-	List_init(&p->cmd_list);
+	List_init(&p->pipeline);
 
 	assert(token_list->size && token_list->first && "Parser_init | empty token list");
 	p->current_token = (Token *) token_list->first;
@@ -10,35 +11,17 @@ void Parser_init(Parser *p, ListHead *token_list) {
 
 void Parser_clear(Parser *p) {
 	assert(p && "Parser_clear | parser is Null");
-	// free commands
-	if (p->cmd_list.size && p->cmd_list.first) {
-		ListItem* aux = p->cmd_list.first;
-		while (aux) {
-			Command* c_item = (Command*)(aux);
-			assert(c_item && "Parser_clear | invalid token cast");
-			aux = aux->next;
-			Command_free(c_item);
-			free(c_item);
-		}
-		List_init(&p->cmd_list);
-	}
+	Pipeline_clear(&p->pipeline);
 	p->current_token = NULL;
 }
 
 void Parser_print(Parser *p) {
 	assert(p && "Parser_print | parser is Null");
-	printf("Command list:\n");
-	if (p->cmd_list.size && p->cmd_list.first) {
-		ListItem* aux = p->cmd_list.first;
-		int i = 0;
-		while (aux) {
-			Command* c_item = (Command*)(aux);
-			assert(c_item && "Parser_clear | invalid token cast");
-			printf("[%d] ", i++);
-			Command_print(c_item);
-			aux = aux->next;
-		}
-	}
+
+	printf("Current token: ");
+	if (p->current_token) Token_print(p->current_token);
+	printf("\n");
+	Pipeline_print(&p->pipeline);
 }
 
 void Parser_error(Parser *p) {
@@ -108,7 +91,7 @@ int Parser_cmd(Parser *p) {
 		ret = Parser_item(p, c);
 		if (ret == -1) return (Command_free(c), free(c), -1);
 	}
-	List_insert(&p->cmd_list, p->cmd_list.last, &c->list);
+	List_insert(&p->pipeline, p->pipeline.last, &c->list);
 	return (1);
 }
 
@@ -128,7 +111,7 @@ int Parser_pipeline(Parser *p) {
 		p->current_token = (Token *) p->current_token->list.next; // next
 		ret = Parser_cmd(p);
 		if (ret == -1) return (-1);
-		if (p->cmd_list.size > MAX_CMDS)
+		if (p->pipeline.size > MAX_CMDS)
 			return (error(1, "Parser: maximum number of commands exceeded"), -1);
 	}
 	return (0);

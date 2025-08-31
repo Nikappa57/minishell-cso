@@ -2,6 +2,7 @@
 # include "Command.h"
 # include "builtin.h"
 # include "redirections.h"
+# include "Pipeline.h"
 
 void Executor_init(Executor *e) {
 	List_init(&e->jobs);
@@ -59,7 +60,11 @@ static int _Executor_child(Executor *e, Command *cmd) {
 	(void)e;
 	(void)cmd;
 	if (DEBUG) printf("CHILD");
-	return 0;
+
+	Command_free(cmd);
+	free(cmd);
+	Executor_clear(e);
+	return g_exit_code;
 }
 
 void Executor_exe(Executor *e, ListHead *pipeline) {
@@ -129,7 +134,6 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 					_exit(g_exit_code);
 				}
 			}
-
 			_exit(_Executor_child(e, c));
 		}
 		else { // parent
