@@ -74,9 +74,11 @@ static int _Executor_child(Executor *e, Command *cmd) {
 		goto C_RET;
 	}
 
-	// TODO: external cmd
-
-	error(127, "Command not found: %s", cmd->argv[0]);
+	execvp(cmd->argv[0], cmd->argv);
+	if (errno == ENOENT)
+		error(127, "Command not found: %s", cmd->argv[0]);
+	else
+		error(126, "Command error: %s: ", cmd->argv[0], strerror(errno));
 
 C_RET:
 	Command_free(cmd);
