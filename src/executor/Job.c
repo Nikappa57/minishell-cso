@@ -13,11 +13,10 @@ void	Job_clear(Job *j) {
 	if (j->process.size && j->process.first) {
 		ListItem *aux = j->process.first;
 		while (aux) {
-			Job *j_item = (Job *) aux;
-			assert(j_item && "Lexer_clear | invalid token cast");
+			Process *p_item = (Process *) aux;
+			assert(p_item && "Job_clear | invalid token cast");
 			aux = aux->next;
-			Job_clear(j_item);
-			free(j_item);
+			free(p_item);
 		}
 		List_init(&j->process);
 	}
@@ -27,6 +26,7 @@ void	Job_add_process(Job *j, pid_t pid) {
 	Process *p = (Process *) malloc(sizeof(Process));
 	if (! p) handle_error("Job_add_process | malloc error");
 	p->pid = pid;
+	p->list.next = p->list.prev = 0;
 	List_insert(&j->process, j->process.last, &p->list);
 }
 
