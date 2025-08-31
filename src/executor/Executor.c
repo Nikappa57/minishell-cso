@@ -61,6 +61,24 @@ static int _Executor_child(Executor *e, Command *cmd) {
 	(void)cmd;
 	if (DEBUG) printf("CHILD");
 
+	// redirections
+	int ret = redirections_apply(cmd);
+	if (ret == -1) goto C_RET;
+	if (cmd->argc == 0) goto C_RET;
+
+	// builtin
+	builtin_fn b_fn = find_builtin(cmd);
+	if (b_fn) {
+		ret = b_fn(cmd);
+		g_exit_code = ret & 0xFF;
+		goto C_RET;
+	}
+
+	// TODO: external cmd
+
+	error(127, "Command not found: %s", cmd->argv[0]);
+
+C_RET:
 	Command_free(cmd);
 	free(cmd);
 	Executor_clear(e);
@@ -161,7 +179,7 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 		return ;
 	}
 
-	return error(127, "Command not found");
+	return ;
 
 	(void)e;
 }
