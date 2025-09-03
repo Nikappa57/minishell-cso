@@ -1,18 +1,13 @@
 # include "builtin.h"
 
-int placeholder(Command *c) {
-	printf("*** CMD ***\n");
-	Command_print(c);
-	return (0);
-}
-
 static const builtin BUILTINS[] = {
-	{"cd",		placeholder},
-	{"export",	placeholder},
-	{"unset",	placeholder},
-	{"exit",	placeholder},
-	{"echo",	placeholder},
-	{"pwd",		placeholder},
+	{"cd",		ft_cd},
+	{"env",		ft_env},
+	{"export",	ft_export},
+	{"unset",	ft_unset},
+	{"exit",	ft_exit},
+	{"echo",	ft_echo},
+	{"pwd",		ft_pwd},
 	{0, 0}
 };
 

@@ -2,6 +2,7 @@
 
 # include "common.h"
 # include "Command.h"
+# include <linux/limits.h>
 
 typedef int (*builtin_fn)(Command *cmd);
 
@@ -14,7 +15,12 @@ builtin_fn	find_builtin(Command *cmd);
 
 int			ft_cd(Command *c);
 int			ft_export(Command *c);
+int			ft_env(Command *c);
 int			ft_unset(Command *c);
 int			ft_exit(Command *c);
 int			ft_echo(Command *c);
 int			ft_pwd(Command *c);
+
+/* utils */
+
+bool	str_isdigit(const char *s);

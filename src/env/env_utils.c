@@ -28,9 +28,9 @@ static bool env_is_valid_key(const char *s) {
 
 
 void env_print() {
-	printf("--- ENV print ---\n");
+	if (DEBUG) printf("--- ENV print ---\n");
 	for (char **e = environ; e && *e; ++e) puts(*e);
-	printf("--- ENV print end ---\n");
+	if (DEBUG) printf("--- ENV print end ---\n");
 }
 
 int env_export(const char *name, const char *value) {

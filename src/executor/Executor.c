@@ -27,6 +27,8 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 
 	(void)e;
 
+	if (DEBUG) printf("*** PARENT ***\n");
+
 	// redirections
 
 	int ret = save_stdio();
@@ -44,10 +46,9 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 	
 	// run cmd
 	if (b_fn) {
-		ret = b_fn(cmd);
-		g_exit_code = ret & 0xFF;
+		ret = b_fn(cmd); // set g_exit_code
+		if (ret != 0) fprintf(stderr, "buildin failed\n");
 	}
-	
 
 	if (DEBUG) printf("CMD code: %d\n", g_exit_code);
 
@@ -56,22 +57,21 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 	return ;
 }
 
-static int _Executor_child(Executor *e, Command *cmd) {
+static void _Executor_child(Executor *e, Command *cmd) {
 	(void)e;
-	(void)cmd;
-	if (DEBUG) printf("CHILD");
+	if (DEBUG) if (DEBUG) printf("*** CHILD ***\n");
 
 	// redirections
 	int ret = redirections_apply(cmd);
-	if (ret == -1) goto C_RET;
-	if (cmd->argc == 0) goto C_RET;
+	if (ret == -1) return ;
+	if (cmd->argc == 0) return ;
 
 	// builtin
 	builtin_fn b_fn = find_builtin(cmd);
 	if (b_fn) {
-		ret = b_fn(cmd);
-		g_exit_code = ret & 0xFF;
-		goto C_RET;
+		ret = b_fn(cmd); // set g_exit_code
+		if (ret != 0) fprintf(stderr, "buildin failed\n");
+		return ;
 	}
 
 	execvp(cmd->argv[0], cmd->argv);
@@ -79,12 +79,6 @@ static int _Executor_child(Executor *e, Command *cmd) {
 		error(127, "Command not found: %s", cmd->argv[0]);
 	else
 		error(126, "Command error: %s: ", cmd->argv[0], strerror(errno));
-
-C_RET:
-	Command_free(cmd);
-	free(cmd);
-	Executor_clear(e);
-	return g_exit_code;
 }
 
 void Executor_exe(Executor *e, ListHead *pipeline) {
@@ -120,7 +114,7 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 		Command *c = (Command*)it;
 		assert(first && "Executor_exe | invalid cast");
 
-		pid_t pid = fork();
+		pid_t pid = vfork();
 		if (pid == -1) { // error
 			Job_clear(&j);
 			close_pipes(pipes, n_pipes);
@@ -154,7 +148,8 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 					_exit(g_exit_code);
 				}
 			}
-			_exit(_Executor_child(e, c));
+			_Executor_child(e, c);
+			_exit(g_exit_code);
 		}
 		else { // parent
 			// create new process
@@ -168,20 +163,12 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 		return ;
 	}
 	// wait job
-	// List_detach(e->)
 	Job_wait(&j); // set g_exit_code
 	Job_clear(&j);
-
-
-	// TODO: execute pipeline
 
 	ret = close_pipes(pipes, n_pipes);
 	if (ret == -1) {
 		if (DEBUG) fprintf(stderr, "create pipe error");
 		return ;
 	}
-
-	return ;
-
-	(void)e;
 }

@@ -108,3 +108,7 @@ All'interno di execute crea la pipe (se necessario, quindi se ha un comando succ
 
 Ricordiamoci di chiudere sempre tutti gli fd e di ripristinare gli fd del processo padre se vengono cambiati. 
 Una volta avviata la pipeline si devono aspettare i processi figli e aggiornare il codice di uscita con il codice di uscita dell'ultimo processo (Salvato in last pid) o almeno ho fatto così nella versione precedente.
+
+### Builtin
+
+- echo (-n) args
