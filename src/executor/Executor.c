@@ -88,6 +88,10 @@ static void _Executor_child(Executor *e, Command *cmd) {
 
 void Executor_exe(Executor *e, ListHead *pipeline) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
+
+	// reset exit code
+	g_exit_code = 0;
+
 	int ret;
 	Command *first = (Command *) pipeline->first;
 	assert(first && "Executor_exe | invalid cast");
