@@ -11,6 +11,8 @@ typedef struct Job {
 	ListItem	list;
 	JobState	state;
 	ListHead	process; // Process list
+	pid_t		pgid;
+	bool		background;
 } Job;
 
 void	Job_init(Job *j, ListHead *pipeline);

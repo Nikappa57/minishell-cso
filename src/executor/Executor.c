@@ -3,9 +3,23 @@
 # include "builtin.h"
 # include "redirections.h"
 # include "Pipeline.h"
+# include "signals.h"
 
 void Executor_init(Executor *e) {
 	List_init(&e->jobs);
+
+	// man: test whether a file descriptor refers to a terminal
+	e->interactive = isatty(STDIN_FILENO);
+	e->tty_fd = STDIN_FILENO;
+	if (e->interactive) {
+		// set gpid = pid for the shell process
+		e->shell_pgid = getpid();
+		setpgid(0, e->shell_pgid);
+		// 
+		tcsetpgrp(e->tty_fd, e->shell_pgid);
+
+		set_shell_signals();
+	}
 }
 
 void Executor_clear(Executor *e) {
