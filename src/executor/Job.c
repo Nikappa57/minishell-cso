@@ -40,10 +40,12 @@ void	Job_wait(Job *j) {
 
 		ret = waitpid(p->pid, &status, 0);
 		if (ret < 0) continue ;
+		
+		// save cmd last status
+		if (it == j->process.last) {
+			if (WIFEXITED(status))
+				g_exit_code = WEXITSTATUS(status);
+		}
 	}
-
-	// save last status
-	if (WIFEXITED(status))
-		g_exit_code = WEXITSTATUS(status);
 }
 
