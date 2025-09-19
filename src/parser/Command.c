@@ -113,7 +113,6 @@ int Command_set_fdout(Command *c, int fd) {
 
 int Command_dup2(Command *c) {
 	int ret;
-	printf("DUP: %d %d\n", c->fdin, c->fdout);
 	if (c->fdin > 2) {
 		ret = dup2(c->fdin, STDIN_FILENO);
 		if (ret == -1)

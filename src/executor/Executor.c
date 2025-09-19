@@ -43,12 +43,14 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 		if (DEBUG) fprintf(stderr, "redirections_apply error\n");
 		return ;
 	}
-	
+
 	// run cmd
 	if (b_fn) {
 		ret = b_fn(cmd); // set g_exit_code
 		if (ret != 0) fprintf(stderr, "buildin failed\n");
 	}
+	else
+		g_exit_code = 0;
 
 	if (DEBUG) printf("CMD code: %d\n", g_exit_code);
 
@@ -64,7 +66,10 @@ static void _Executor_child(Executor *e, Command *cmd) {
 	// redirections
 	int ret = redirections_apply(cmd);
 	if (ret == -1) return ;
-	if (cmd->argc == 0) return ;
+	if (cmd->argc == 0) {
+		g_exit_code = 0;
+		return ;
+	}
 
 	// builtin
 	builtin_fn b_fn = find_builtin(cmd);
@@ -97,7 +102,6 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 	int n_pipes = (pipeline->size == 1) ? 0 : pipeline->size - 1;
 	int pipes[2 * (n_pipes > 0 ? n_pipes : 1)];
 	ret = create_pipes(pipes, n_pipes);
-	printf("N_PIPES: %d\n", n_pipes);
 	if (ret == -1) {
 		if (DEBUG) fprintf(stderr, "create pipe error");
 		return ;
@@ -110,11 +114,10 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 
 	int idx = 0;
 	for (ListItem *it = pipeline->first; it; it = it->next, ++idx) {
-		printf("IDX: %d\n", idx);
 		Command *c = (Command*)it;
 		assert(first && "Executor_exe | invalid cast");
 
-		pid_t pid = vfork();
+		pid_t pid = fork();
 		if (pid == -1) { // error
 			Job_clear(&j);
 			close_pipes(pipes, n_pipes);
@@ -129,7 +132,7 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 					assert(pipes[(idx - 1) * 2] > 2 && "Executor_exe | invalid pipe (in)");
 					ret = dup2(pipes[(idx - 1) * 2], STDIN_FILENO);
 					if (ret < 0) {
-						perror("dup2(pipe in)");
+						error(1, "dup2(pipe in): %s", strerror(errno));
 						_exit(g_exit_code);
 					}
 				}
@@ -138,7 +141,7 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 					assert(pipes[idx * 2 + 1] > 2 && "Executor_exe | invalid pipe (out)");
 					ret = dup2(pipes[idx * 2 + 1], STDOUT_FILENO);
 					if (ret < 0) {
-						perror("dup2(pipe out)");
+						error(1, "dup2(pipe out): %s", strerror(errno));
 						_exit(g_exit_code);
 					}
 				}
