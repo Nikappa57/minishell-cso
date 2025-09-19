@@ -21,7 +21,7 @@ void set_shell_signals() {
 }
 
 
-static void set_child_signals(void){
+void set_child_signals() {
 	struct sigaction sa={0};
 
 	sa.sa_handler=SIG_DFL;
@@ -36,3 +36,5 @@ static void set_child_signals(void){
 	// background write
 	sigaction(SIGTTOU, &sa, NULL);
 }
+
+

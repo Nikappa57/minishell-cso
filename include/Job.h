@@ -3,7 +3,7 @@
 # include "common.h"
 # include "Process.h"
 # include <sys/types.h>
-#include <sys/wait.h>
+# include <sys/wait.h>
 
 typedef enum { JOB_RUNNING, JOB_STOPPED, JOB_DONE } JobState;
 
@@ -18,4 +18,4 @@ typedef struct Job {
 void	Job_init(Job *j, ListHead *pipeline);
 void	Job_clear(Job *j);
 void	Job_add_process(Job *j, pid_t pid);
-void	Job_wait(Job *j);
+int		Job_wait(Job *j);

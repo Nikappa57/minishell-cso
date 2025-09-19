@@ -14,10 +14,11 @@ void Executor_init(Executor *e) {
 	if (e->interactive) {
 		// set gpid = pid for the shell process
 		e->shell_pgid = getpid();
-		setpgid(0, e->shell_pgid);
-		// 
-		tcsetpgrp(e->tty_fd, e->shell_pgid);
-
+		int ret = setpgid(0, e->shell_pgid);
+		if (ret == -1) handle_error("Executor_init | setpgid error");
+		// the shell get the terminal
+		give_terminal_to(e->tty_fd, e->shell_pgid);
+		// ignore signals in shell process
 		set_shell_signals();
 	}
 }
@@ -126,9 +127,9 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 	}
 
 	// create new job
-	Job j;
-	Job_init(&j, pipeline);
-	// List_insert(&e->jobs, e->jobs.last, &j.list);
+	Job *j = (Job*) calloc(1, sizeof(Job));
+	Job_init(j, pipeline);
+	List_insert(&e->jobs, e->jobs.last, &j->list);
 
 	int idx = 0;
 	for (ListItem *it = pipeline->first; it; it = it->next, ++idx) {
@@ -137,12 +138,35 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 
 		pid_t pid = fork();
 		if (pid == -1) { // error
-			Job_clear(&j);
 			close_pipes(pipes, n_pipes);
 			error(1, "fork error: %s", strerror(errno));
+			j->state = JOB_DONE;
 			return ;
 		}
-		else if (pid == 0) { // child
+		// child
+		else if (pid == 0) {
+			// set signals
+			set_child_signals();
+
+			// set pgid
+			// first: new group pgid = pid
+			if (idx == 0) {
+				ret = setpgid(0, 0);
+				if (ret == -1) {
+					error(1, "setpgid (first): %s", strerror(errno));
+					_exit(g_exit_code);
+				}
+			}
+			// others: join in the first process group
+			else {
+				assert(j->pgid != -1 && "Executor_exe | Job pgid is not set");
+				ret = setpgid(0, j->pgid);
+				if (ret == -1) {
+					error(1, "setpgid: %s", strerror(errno));
+					_exit(g_exit_code);
+				}
+			}
+
 			// set pipe
 			if (n_pipes) {
 				// in
@@ -172,24 +196,50 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 			_Executor_child(e, c);
 			_exit(g_exit_code);
 		}
-		else { // parent
-			// create new process
-			Job_add_process(&j, pid);
+		// parent
+		else {
+			// if first: save the new pgid
+			if (idx == 0) j->pgid = pid;
+
+			// set pgid of child also in the parent process
+			ret = setpgid(pid, j->pgid);
+			if (ret == -1) error(1, "setpgid (parent): %s", strerror(errno));
+
+			// create a new process
+			Job_add_process(j, pid);
 		}
 	}
+
 	// close pipe
 	ret = close_pipes(pipes, n_pipes);
 	if (ret == -1) {
 		if (DEBUG) fprintf(stderr, "close pipe error");
 		return ;
 	}
-	// wait job
-	Job_wait(&j); // set g_exit_code
-	Job_clear(&j);
 
-	ret = close_pipes(pipes, n_pipes);
-	if (ret == -1) {
-		if (DEBUG) fprintf(stderr, "create pipe error");
-		return ;
+	// give terminal to the new process
+	if (e->interactive) give_terminal_to(j->pgid, e->tty_fd);
+
+	// wait job
+	int last_status = Job_wait(j);
+
+	// give terminal to shell
+	if (e->interactive) give_terminal_to(e->shell_pgid, e->tty_fd);
+
+	// if the job is done, update exit code and remove job
+	if (j->state == JOB_DONE) {
+		if (WIFEXITED(last_status))
+			g_exit_code = (unsigned char) WEXITSTATUS(last_status);
+		else if (WIFSIGNALED(last_status))
+			g_exit_code = (unsigned char) (128 + WTERMSIG(last_status));
+		else
+			g_exit_code = 1;
+		// remove job
+		List_detach(&e->jobs, &j->list);
+		Job_clear(j);
+		free(j);
+	} else {
+		// JOB_STOPPED: lascialo in tabella per fg/bg
+		// (puoi marcarlo background=false per ora)
 	}
 }

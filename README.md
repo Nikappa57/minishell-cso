@@ -1,5 +1,10 @@
 # minishell-cso
 
+### TODO:
+
+- [ ] fix error: give_terminal_to: Bad file descriptor
+- [ ] add bg and fg
+- [ ] add newline for ctr + c
 
 ### readline dep
 sudo apt-get install libreadline-dev
