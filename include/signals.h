@@ -9,4 +9,5 @@
 
 
 void	set_shell_signals();
+void	set_shell_signals_exe();
 void	set_child_signals();

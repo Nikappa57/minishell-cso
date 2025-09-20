@@ -4,6 +4,7 @@
 # include "env.h"
 # include "Executor.h"
 # include "redirections.h"
+# include "signals.h"
 
 // main loop
 static void shell_loop() {
@@ -15,6 +16,9 @@ static void shell_loop() {
 	Lexer_init(&lexer);
 	Executor_init(&executer);
 	while (g_alive) {
+		// ignore signals in shell process
+		set_shell_signals();
+
 		// readline
 		line = readline(">> ");
 		if (!line) { // EOF

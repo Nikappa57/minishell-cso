@@ -18,4 +18,3 @@ typedef struct Job {
 void	Job_init(Job *j, ListHead *pipeline);
 void	Job_clear(Job *j);
 void	Job_add_process(Job *j, pid_t pid);
-int		Job_wait(Job *j);
