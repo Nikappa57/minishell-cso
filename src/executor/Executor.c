@@ -16,8 +16,8 @@ void Executor_init(Executor *e) {
 		e->shell_pgid = getpid();
 		int ret = setpgid(0, e->shell_pgid);
 		if (ret == -1) handle_error("Executor_init | setpgid error");
-		// the shell get the terminal
-		give_terminal_to(e->tty_fd, e->shell_pgid);
+		// give terminal to shell
+		give_terminal_to(e->shell_pgid, e->tty_fd);
 		// ignore signals in shell process
 		set_shell_signals();
 	}
@@ -115,7 +115,7 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 	
 	// run in parent process if it's a builtin (also only redirections) and there is only one cmd
 	if ((b_fn || first->argc == 0) && pipeline->size == 1)
-		return _Executor_parent(e, first, b_fn);
+		return (_Executor_parent(e, first, b_fn));
 
 	// create pipes
 	int n_pipes = (pipeline->size == 1) ? 0 : pipeline->size - 1;
@@ -239,7 +239,6 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 		Job_clear(j);
 		free(j);
 	} else {
-		// JOB_STOPPED: lascialo in tabella per fg/bg
-		// (puoi marcarlo background=false per ora)
+		// TODO: check
 	}
 }
