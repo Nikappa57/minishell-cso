@@ -3,7 +3,6 @@
 ### TODO:
 
 - [ ] add bg and fg
-- [ ] add newline for ctr + c
 - [ ] refactoring Executer_exe
 - [ ] zoombie
 

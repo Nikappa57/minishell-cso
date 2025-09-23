@@ -2,6 +2,7 @@
 
 # include "common.h"
 # include "Process.h"
+# include "Command.h"
 # include <sys/types.h>
 # include <sys/wait.h>
 
@@ -13,6 +14,7 @@ typedef struct Job {
 	ListHead	process; // Process list
 	pid_t		pgid;
 	bool		background;
+	ListHead	*pipeline;
 } Job;
 
 void	Job_init(Job *j, ListHead *pipeline);

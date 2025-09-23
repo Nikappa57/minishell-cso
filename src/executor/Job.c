@@ -1,12 +1,11 @@
 # include "Job.h"
 
 void	Job_init(Job *j, ListHead *pipeline) {
-	(void)pipeline;
-
 	j->list.next = j->list.prev = 0;
 	j->state = JOB_RUNNING;
 	j->background = false;
 	j->pgid = -1;
+	j->pipeline = pipeline;
 
 	// process list init
 	List_init(&j->process);

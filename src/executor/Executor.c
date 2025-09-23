@@ -72,12 +72,63 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 	return ;
 }
 
-static void _Executor_child(Executor *e, Command *cmd) {
+static void _Executor_child(Executor *e, Job *j, Command *cmd, int p_idx, int *pipes, int pipes_n) {
+	int ret;
+
+	// set signals
+	set_child_signals();
+
+	// set pgid
+	// first: new group pgid = pid
+	if (p_idx == 0) {
+		ret = setpgid(0, 0);
+		if (ret == -1) {
+			error(1, "setpgid (first): %s", strerror(errno));
+			_exit(g_exit_code);
+		}
+	}
+	// others: join in the first process group
+	else {
+		assert(j->pgid != -1 && "Executor_exe | Job pgid is not set");
+		ret = setpgid(0, j->pgid);
+		if (ret == -1) {
+			error(1, "setpgid: %s", strerror(errno));
+			_exit(g_exit_code);
+		}
+	}
+
+	// set pipe
+	if (pipes_n) {
+		// in
+		if (p_idx > 0) { // skip first for input
+			assert(pipes[(p_idx - 1) * 2] > 2 && "Executor_exe | invalid pipe (in)");
+			ret = dup2(pipes[(p_idx - 1) * 2], STDIN_FILENO);
+			if (ret < 0) {
+				error(1, "dup2(pipe in): %s", strerror(errno));
+				_exit(g_exit_code);
+			}
+		}
+		// out
+		if (p_idx < j->pipeline->size - 1) { // skip last for output
+			assert(pipes[p_idx * 2 + 1] > 2 && "Executor_exe | invalid pipe (out)");
+			ret = dup2(pipes[p_idx * 2 + 1], STDOUT_FILENO);
+			if (ret < 0) {
+				error(1, "dup2(pipe out): %s", strerror(errno));
+				_exit(g_exit_code);
+			}
+		}
+		ret = close_pipes(pipes, pipes_n);
+		if (ret == -1) {
+			if (DEBUG) fprintf(stderr, "close pipe error");
+			_exit(g_exit_code);
+		}
+	}
+
 	(void)e;
 	if (DEBUG) if (DEBUG) printf("*** CHILD ***\n");
 
 	// redirections
-	int ret = redirections_apply(cmd);
+	ret = redirections_apply(cmd);
 	if (ret == -1) return ;
 	if (cmd->argc == 0) {
 		g_exit_code = 0;
@@ -99,7 +150,6 @@ static void _Executor_child(Executor *e, Command *cmd) {
 		error(126, "Command error: %s: ", cmd->argv[0], strerror(errno));
 }
 
-
 static void	_Executor_wait_job(Executor *e, Job *j) {
 	int		last_status	= 0;
 	int		process_n	= j->process.size;
@@ -120,7 +170,6 @@ static void	_Executor_wait_job(Executor *e, Job *j) {
 			j->state = JOB_STOPPED; // update state
 			fprintf(stderr, "\n[%d]  Stopped\n", (int)j->pgid);
 			g_exit_code = (unsigned char)(128 + WSTOPSIG(status)); // 148 for SIGTSTP
-
 			return ; // leave the job in the jobs table
 		}
 
@@ -171,8 +220,6 @@ static void	_Executor_wait_job(Executor *e, Job *j) {
 	free(j);
 }
 
-
-
 void Executor_exe(Executor *e, ListHead *pipeline) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
 
@@ -190,9 +237,9 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 		return (_Executor_parent(e, first, b_fn));
 
 	// create pipes
-	int n_pipes = (pipeline->size == 1) ? 0 : pipeline->size - 1;
-	int pipes[2 * (n_pipes > 0 ? n_pipes : 1)];
-	ret = create_pipes(pipes, n_pipes);
+	int pipes_n = (pipeline->size == 1) ? 0 : pipeline->size - 1;
+	int pipes[2 * (pipes_n > 0 ? pipes_n : 1)];
+	ret = create_pipes(pipes, pipes_n);
 	if (ret == -1) {
 		if (DEBUG) fprintf(stderr, "create pipe error");
 		return ;
@@ -213,62 +260,16 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 
 		pid_t pid = fork();
 		if (pid == -1) { // error
-			close_pipes(pipes, n_pipes);
+			close_pipes(pipes, pipes_n);
 			error(1, "fork error: %s", strerror(errno));
 			j->state = JOB_DONE;
 			return ;
 		}
 		// child
 		else if (pid == 0) {
-			// set signals
-			set_child_signals();
-
-			// set pgid
-			// first: new group pgid = pid
-			if (idx == 0) {
-				ret = setpgid(0, 0);
-				if (ret == -1) {
-					error(1, "setpgid (first): %s", strerror(errno));
-					_exit(g_exit_code);
-				}
-			}
-			// others: join in the first process group
-			else {
-				assert(j->pgid != -1 && "Executor_exe | Job pgid is not set");
-				ret = setpgid(0, j->pgid);
-				if (ret == -1) {
-					error(1, "setpgid: %s", strerror(errno));
-					_exit(g_exit_code);
-				}
-			}
-
-			// set pipe
-			if (n_pipes) {
-				// in
-				if (idx > 0) { // skip first for input
-					assert(pipes[(idx - 1) * 2] > 2 && "Executor_exe | invalid pipe (in)");
-					ret = dup2(pipes[(idx - 1) * 2], STDIN_FILENO);
-					if (ret < 0) {
-						error(1, "dup2(pipe in): %s", strerror(errno));
-						_exit(g_exit_code);
-					}
-				}
-				// out
-				if (idx < pipeline->size - 1) { // skip last for output
-					assert(pipes[idx * 2 + 1] > 2 && "Executor_exe | invalid pipe (out)");
-					ret = dup2(pipes[idx * 2 + 1], STDOUT_FILENO);
-					if (ret < 0) {
-						error(1, "dup2(pipe out): %s", strerror(errno));
-						_exit(g_exit_code);
-					}
-				}
-				ret = close_pipes(pipes, n_pipes);
-				if (ret == -1) {
-					if (DEBUG) fprintf(stderr, "close pipe error");
-					_exit(g_exit_code);
-				}
-			}
-			_Executor_child(e, c);
+			_Executor_child(e, j, c, idx, pipes, pipes_n);
+			Pipeline_clear(pipeline);
+			Executor_clear(e);
 			_exit(g_exit_code);
 		}
 		// parent
@@ -286,7 +287,7 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 	}
 
 	// close pipe
-	ret = close_pipes(pipes, n_pipes);
+	ret = close_pipes(pipes, pipes_n);
 	if (ret == -1) {
 		if (DEBUG) fprintf(stderr, "close pipe error");
 		return ;
