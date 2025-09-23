@@ -3,7 +3,6 @@
 ### TODO:
 
 - [ ] add bg and fg
-- [ ] refactoring Executer_exe
 - [ ] zoombie
 
 ### readline dep

@@ -1,10 +1,11 @@
 # include "builtin.h"
 # include "env.h"
 
-int	ft_export(Command *cmd)
+int	ft_export(Executor *e, Command *cmd)
 {
+	(void)e;
 	if (cmd->argc == 1)
-		return (ft_env(cmd));
+		return (ft_env(e, cmd));
 	
 	for (int i = 1; cmd->argv[i]; i++) {
 		if (cmd->argv[i][0] == '=') {

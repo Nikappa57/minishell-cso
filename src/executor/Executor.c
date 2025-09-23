@@ -59,7 +59,7 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 
 	// run cmd
 	if (b_fn) {
-		ret = b_fn(cmd); // set g_exit_code
+		ret = b_fn(e, cmd); // set g_exit_code
 		if (ret != 0) fprintf(stderr, "buildin failed\n");
 	}
 	else
@@ -138,7 +138,7 @@ static void _Executor_child(Executor *e, Job *j, Command *cmd, int p_idx, int *p
 	// builtin
 	builtin_fn b_fn = find_builtin(cmd);
 	if (b_fn) {
-		ret = b_fn(cmd); // set g_exit_code
+		ret = b_fn(e, cmd); // set g_exit_code
 		if (ret != 0) fprintf(stderr, "buildin failed\n");
 		return ;
 	}
