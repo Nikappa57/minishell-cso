@@ -8,6 +8,8 @@
 
 typedef enum { JOB_RUNNING, JOB_STOPPED, JOB_DONE } JobState;
 
+extern const char* JobState_str[];
+
 typedef struct Job {
 	ListItem	list;
 	JobState	state;
@@ -19,4 +21,5 @@ typedef struct Job {
 
 void	Job_init(Job *j, ListHead *pipeline);
 void	Job_clear(Job *j);
+void	Job_print(Job *j);
 void	Job_add_process(Job *j, pid_t pid);

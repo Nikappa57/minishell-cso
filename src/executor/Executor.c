@@ -252,7 +252,7 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 
 	int idx = 0;
 	for (ListItem *it = pipeline->first; it; it = it->next, ++idx) {
-		Command *c = (Command*)it;
+		Command *c = (Command *) it;
 		assert(first && "Executor_exe | invalid cast");
 
 		// ignore signals
@@ -301,4 +301,16 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 
 	// give terminal to shell
 	if (e->interactive) give_terminal_to(e->shell_pgid, e->tty_fd);
+}
+
+void Executor_print(Executor *e) {
+	printf("*** Executor ***\n");
+	printf("interactive: %s\n", e->interactive ? "yes" : "no");
+	printf("tty fd: %d | shell pgid: %d\n", e->tty_fd, e->shell_pgid);
+	printf("JOBS table:\n");
+	for (ListItem *it = e->jobs.first; it; it = it->next) {
+		Job *j = (Job *) it;
+		assert(j && "Executor_print | invalid cast");
+		Job_print(j);
+	}
 }

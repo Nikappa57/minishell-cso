@@ -25,6 +25,18 @@ void	Job_clear(Job *j) {
 	}
 }
 
+void	Job_print(Job *j) {
+	printf("JOB [%d] state: %s, background: %s\n",
+		j->pgid, JobState_str[j->state], j->background ? "yes" : "no");
+	printf("Process: ");
+	for (ListItem *it = j->process.first; it; it = it->next) {
+		Process *p = (Process *) it;
+		assert(p && "Job_print | invalid cast");
+		printf("%d ", p->pid);
+	}
+	printf("\n");
+}
+
 void	Job_add_process(Job *j, pid_t pid) {
 	Process *p = (Process *) malloc(sizeof(Process));
 	if (! p) handle_error("Job_add_process | malloc error");

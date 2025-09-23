@@ -11,10 +11,10 @@ static void shell_loop() {
 	char		*line;
 	ListHead	lexer;
 	Parser		parser;
-	Executor	executer;
+	Executor	executor;
 
 	Lexer_init(&lexer);
-	Executor_init(&executer);
+	Executor_init(&executor);
 	while (g_alive) {
 		// ignore signals in shell process
 		set_shell_signals();
@@ -58,20 +58,22 @@ static void shell_loop() {
 		if (DEBUG) printf("--- After hdoc ---\n");
 		if (DEBUG) Parser_print(&parser);
 
-		// executer
-		Executor_exe(&executer, &parser.pipeline);
+		// executor
+		Executor_exe(&executor, &parser.pipeline);
 
 		// cleanup
 		Parser_clear(&parser);
 		Lexer_clear(&lexer);
 		if (line) free(line);
 		line = 0;
+
+		Executor_print(&executor);
 	}
 	// cleanup
 	Parser_clear(&parser);
 	Lexer_clear(&lexer);
 	if (line) free(line);
-	Executor_clear(&executer);
+	Executor_clear(&executor);
 	return ;
 }
 

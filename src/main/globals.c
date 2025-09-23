@@ -10,3 +10,4 @@ const char*		TokenType_str[] =	{"|", "<", ">", ">>",
 										"<<", "word", "newline"};
 const char*		RedType_repr[] =	{"R_IN", "R_OUT", "R_APP", "R_HD"};
 const char*		RedType_str[] =		{"<", ">", ">>", "<<"};
+const char*		JobState_str[] =	{"RUNNING", "STOPPED", "DONE"};
