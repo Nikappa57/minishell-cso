@@ -116,3 +116,7 @@ Una volta avviata la pipeline si devono aspettare i processi figli e aggiornare 
 ### Builtin
 
 - echo (-n) args
+
+#### fg / bg / jobs
+https://www.redhat.com/en/blog/jobs-bg-fg
+

@@ -4,8 +4,10 @@
 # include "Job.h"
 # include <sys/types.h>
 
+# define MAX_JOBS 10
+
 typedef struct {
-	ListHead	jobs;
+	Job			*jobs[MAX_JOBS + 1]; // jobs table
 	bool		interactive;
 	int			tty_fd;
 	pid_t		shell_pgid;

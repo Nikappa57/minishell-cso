@@ -6,7 +6,8 @@
 # include "signals.h"
 
 void Executor_init(Executor *e) {
-	List_init(&e->jobs);
+	for (int i = 0; i < MAX_JOBS + 1; i++)
+		e->jobs[i] = 0;
 
 	// man: test whether a file descriptor refers to a terminal
 	e->interactive = isatty(STDIN_FILENO);
@@ -23,16 +24,12 @@ void Executor_init(Executor *e) {
 
 void Executor_clear(Executor *e) {
 	// jobs list clear
-	if (e->jobs.size && e->jobs.first) {
-		ListItem *aux = e->jobs.first;
-		while (aux) {
-			Job *j_item = (Job *) aux;
-			assert(j_item && "Lexer_clear | invalid token cast");
-			aux = aux->next;
-			Job_clear(j_item);
-			free(j_item);
+	for (int i = 0; i < MAX_JOBS; i++) {
+		if (e->jobs[i]) {
+			Job_clear(e->jobs[i]);
+			free(e->jobs[i]);
+			e->jobs[i] = 0;
 		}
-		List_init(&e->jobs);
 	}
 }
 
@@ -168,7 +165,7 @@ static void	_Executor_wait_job(Executor *e, Job *j) {
 		// CTR-Z : job stopped
 		if (WIFSTOPPED(status)) {
 			j->state = JOB_STOPPED; // update state
-			fprintf(stderr, "\n[%d]  Stopped\n", (int)j->pgid);
+			fprintf(stderr, "\n[%d]  Stopped\n", (int)j->idx + 1);
 			g_exit_code = (unsigned char)(128 + WSTOPSIG(status)); // 148 for SIGTSTP
 			return ; // leave the job in the jobs table
 		}
@@ -215,9 +212,31 @@ static void	_Executor_wait_job(Executor *e, Job *j) {
 		g_exit_code = 1;
 
 	// remove job from jobs table and free obj
-	List_detach(&e->jobs, &j->list);
 	Job_clear(j);
 	free(j);
+	e->jobs[j->idx] = 0;
+}
+
+// create new job
+static Job *_Executor_new_job(Executor *e, ListHead *pipeline) {
+	// find first free idx
+	int j_idx = -1;
+	for (int i = 0; i < MAX_JOBS; i++) {
+		if (e->jobs[i] == 0) {
+			j_idx = i;
+			break;
+		}
+	}
+	if (j_idx == -1) {
+		error(1, "jobs: table full");
+		return (0);
+	}
+
+	Job *j = e->jobs[j_idx] = (Job *) calloc(1, sizeof(Job));
+	if (!j) handle_error("_Executor_new_job | malloc error");
+
+	Job_init(j, pipeline, j_idx);
+	return (j);
 }
 
 void Executor_exe(Executor *e, ListHead *pipeline) {
@@ -245,10 +264,8 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 		return ;
 	}
 
-	// create new job
-	Job *j = (Job*) calloc(1, sizeof(Job));
-	Job_init(j, pipeline);
-	List_insert(&e->jobs, e->jobs.last, &j->list);
+	Job *j = _Executor_new_job(e, pipeline);
+	if (!j) return ;
 
 	int idx = 0;
 	for (ListItem *it = pipeline->first; it; it = it->next, ++idx) {
@@ -308,9 +325,8 @@ void Executor_print(Executor *e) {
 	printf("interactive: %s\n", e->interactive ? "yes" : "no");
 	printf("tty fd: %d | shell pgid: %d\n", e->tty_fd, e->shell_pgid);
 	printf("JOBS table:\n");
-	for (ListItem *it = e->jobs.first; it; it = it->next) {
-		Job *j = (Job *) it;
-		assert(j && "Executor_print | invalid cast");
-		Job_print(j);
+	for (int i = 0; i < MAX_JOBS; ++i) {
+		Job *j = e->jobs[i];
+		if (j) Job_print(j);
 	}
 }
