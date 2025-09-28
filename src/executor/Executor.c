@@ -147,76 +147,6 @@ static void _Executor_child(Executor *e, Job *j, Command *cmd, int p_idx, int *p
 		error(126, "Command error: %s: ", cmd->argv[0], strerror(errno));
 }
 
-static void	_Executor_wait_job(Executor *e, Job *j) {
-	int		last_status	= 0;
-	int		process_n	= j->process.size;
-	pid_t	last_pid	= ((Process *) j->process.last)->pid;
-
-	while (process_n > 0) {
-		int status = 0;
-
-		// wait for any process in the group
-		pid_t w_pid = waitpid(-j->pgid, &status, WUNTRACED);
-		if (w_pid < 0) {
-			if (errno == EINTR) continue ;
-			return ; // no process to wait
-		}
-
-		// CTR-Z : job stopped
-		if (WIFSTOPPED(status)) {
-			j->state = JOB_STOPPED; // update state
-			fprintf(stderr, "\n[%d]  Stopped\n", (int)j->idx + 1);
-			g_exit_code = (unsigned char)(128 + WSTOPSIG(status)); // 148 for SIGTSTP
-			return ; // leave the job in the jobs table
-		}
-
-		// update Process status
-		for (ListItem *it = j->process.first; it; it = it->next) {
-			Process *p = (Process *) it;
-			assert(p && "Job_wait | casting error");
-
-			// find the process by id
-			if (p->pid == w_pid) {
-				// update status
-				p->status = status;
-				break ;
-			}
-		}
-
-		// if process is finished, reduce process_n
-		if (WIFEXITED(status) || WIFSIGNALED(status)) {
-			// save last command status
-			if (w_pid == last_pid) last_status = status;
-			--process_n;
-		}
-	}
-
-	assert(process_n == 0 && "_Executor_wait_job | process_n is not zero");
-
-	// set job as done
-	// process_n = 0 => job is done
-	j->state = JOB_DONE;
-
-	// update exit code
-	// terminated normally
-	if (WIFEXITED(last_status))
-		g_exit_code = (unsigned char) WEXITSTATUS(last_status);
-	// killed by signals
-	else if (WIFSIGNALED(last_status)) {
-		int sig = WTERMSIG(last_status);
-		g_exit_code = (unsigned char)(128 + sig);
-		if (sig == SIGINT) fprintf(stderr, "\n");
-		if (sig == SIGQUIT) fprintf(stderr, "Quit (core dumped)\n");
-	}
-	else
-		g_exit_code = 1;
-
-	// remove job from jobs table and free obj
-	Job_clear(j);
-	free(j);
-	e->jobs[j->idx] = 0;
-}
-
 // create new job
 static Job *_Executor_new_job(Executor *e, ListHead *pipeline, char *line) {
 	// find first free idx
@@ -236,6 +166,8 @@ static Job *_Executor_new_job(Executor *e, ListHead *pipeline, char *line) {
 	if (!j) handle_error("_Executor_new_job | malloc error");
 
 	Job_init(j, pipeline, j_idx, line);
+	e->current_job = j;
+
 	return (j);
 }
 
@@ -314,10 +246,83 @@ void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 	if (e->interactive) give_terminal_to(j->pgid, e->tty_fd);
 
 	// wait job
-	_Executor_wait_job(e, j);
+	Executor_wait_job(e, j);
 
 	// give terminal to shell
 	if (e->interactive) give_terminal_to(e->shell_pgid, e->tty_fd);
+}
+
+void Executor_wait_job(Executor *e, Job *j) {
+	int		last_status	= 0;
+	int		process_n	= j->process.size;
+	pid_t	last_pid	= ((Process *) j->process.last)->pid;
+
+	// setup signals
+	set_shell_signals_exe();
+
+	while (process_n > 0) {
+		int status = 0;
+
+		// wait for any process in the group
+		pid_t w_pid = waitpid(-j->pgid, &status, WUNTRACED);
+		if (w_pid < 0) {
+			if (errno == EINTR) continue ;
+			return ; // no process to wait
+		}
+
+		// CTR-Z : job stopped
+		if (WIFSTOPPED(status)) {
+			j->state = JOB_STOPPED; // update state
+			fprintf(stderr, "\n[%d]  Stopped\n", (int)j->idx + 1);
+			g_exit_code = (unsigned char)(128 + WSTOPSIG(status)); // 148 for SIGTSTP
+			return ; // leave the job in the jobs table
+		}
+
+		// update Process status
+		for (ListItem *it = j->process.first; it; it = it->next) {
+			Process *p = (Process *) it;
+			assert(p && "Executor_wait_job | casting error");
+
+			// find the process by id
+			if (p->pid == w_pid) {
+				// update status
+				p->status = status;
+				break ;
+			}
+		}
+
+		// if process is finished, reduce process_n
+		if (WIFEXITED(status) || WIFSIGNALED(status)) {
+			// save last command status
+			if (w_pid == last_pid) last_status = status;
+			--process_n;
+		}
+	}
+
+	assert(process_n == 0 && "_Executor_wait_job | process_n is not zero");
+
+	// set job as done
+	// process_n = 0 => job is done
+	j->state = JOB_DONE;
+
+	// update exit code
+	// terminated normally
+	if (WIFEXITED(last_status))
+		g_exit_code = (unsigned char) WEXITSTATUS(last_status);
+	// killed by signals
+	else if (WIFSIGNALED(last_status)) {
+		int sig = WTERMSIG(last_status);
+		g_exit_code = (unsigned char)(128 + sig);
+		if (sig == SIGINT) fprintf(stderr, "\n");
+		if (sig == SIGQUIT) fprintf(stderr, "Quit (core dumped)\n");
+	}
+	else
+		g_exit_code = 1;
+
+	// remove job from jobs table and free obj
+	Job_clear(j);
+	free(j);
+	e->jobs[j->idx] = 0;
 }
 
 void Executor_print(Executor *e) {
@@ -330,6 +335,8 @@ void Executor_print(Executor *e) {
 		if (j) Job_print(j);
 	}
 }
+
+/* Jobs */
 
 Job *Executor_jobs_get(Executor *e, char *str_idx) {
 	Job *j = 0;

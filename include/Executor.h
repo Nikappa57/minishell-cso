@@ -19,6 +19,7 @@ void Executor_clear(Executor *e);
 void Executor_print(Executor *e);
 
 void Executor_exe(Executor *e, ListHead *pipeline, char *line);
+void Executor_wait_job(Executor *e, Job *j);
 
 /* Jobs */
 
@@ -26,7 +27,6 @@ Job *Executor_jobs_get(Executor *e, char *str_idx);
 
 void Executor_get_last_stopped_job(Executor *e);
 void Executor_get_job_by_pgid(Executor *e, pid_t pgid);
-
 
 
 /* utils */

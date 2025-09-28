@@ -118,5 +118,6 @@ Una volta avviata la pipeline si devono aspettare i processi figli e aggiornare 
 - echo (-n) args
 
 #### fg / bg / jobs
+https://afni.nimh.nih.gov/pub/dist/edu/data/CD.expanded/AFNI_data6/unix_tutorial/misc/unix_commands.html
 https://www.redhat.com/en/blog/jobs-bg-fg
 

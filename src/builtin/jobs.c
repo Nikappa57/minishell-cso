@@ -1,6 +1,6 @@
 # include "builtin.h"
 
-void job_print(Executor *e, Job *j) {
+static void job_print(Executor *e, Job *j) {
 	if (!j) return ;
 	printf("[%d]%c %s\t%s\n",
 		j->idx + 1, 						// jobs idx
