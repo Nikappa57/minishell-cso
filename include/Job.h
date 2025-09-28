@@ -17,9 +17,10 @@ typedef struct Job {
 	bool		background;
 	ListHead	*pipeline;
 	int			idx;
+	char		*cmd_str;
 } Job;
 
-void	Job_init(Job *j, ListHead *pipeline, int idx);
+void	Job_init(Job *j, ListHead *pipeline, int idx, char *cmd_str);
 void	Job_clear(Job *j);
 void	Job_print(Job *j);
 void	Job_add_process(Job *j, pid_t pid);

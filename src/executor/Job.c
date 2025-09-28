@@ -1,11 +1,12 @@
 # include "Job.h"
 
-void	Job_init(Job *j, ListHead *pipeline, int idx) {
+void	Job_init(Job *j, ListHead *pipeline, int idx, char *cmd_str) {
 	j->state = JOB_RUNNING;
 	j->background = false;
 	j->pgid = -1;
 	j->pipeline = pipeline;
 	j->idx = idx;
+	j->cmd_str = strdup(cmd_str);
 
 	// process list init
 	List_init(&j->process);
@@ -23,8 +24,13 @@ void	Job_clear(Job *j) {
 		}
 		List_init(&j->process);
 	}
+	if (j->cmd_str) {
+		free(j->cmd_str);
+		j->cmd_str = 0;
+	}
 }
 
+// debug print
 void	Job_print(Job *j) {
 	printf("JOB [%d] state: %s, background: %s\n",
 		j->pgid, JobState_str[j->state], j->background ? "yes" : "no");

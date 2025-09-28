@@ -218,7 +218,7 @@ static void	_Executor_wait_job(Executor *e, Job *j) {
 }
 
 // create new job
-static Job *_Executor_new_job(Executor *e, ListHead *pipeline) {
+static Job *_Executor_new_job(Executor *e, ListHead *pipeline, char *line) {
 	// find first free idx
 	int j_idx = -1;
 	for (int i = 0; i < MAX_JOBS; i++) {
@@ -235,11 +235,11 @@ static Job *_Executor_new_job(Executor *e, ListHead *pipeline) {
 	Job *j = e->jobs[j_idx] = (Job *) calloc(1, sizeof(Job));
 	if (!j) handle_error("_Executor_new_job | malloc error");
 
-	Job_init(j, pipeline, j_idx);
+	Job_init(j, pipeline, j_idx, line);
 	return (j);
 }
 
-void Executor_exe(Executor *e, ListHead *pipeline) {
+void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
 
 	// reset exit code
@@ -264,7 +264,7 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 		return ;
 	}
 
-	Job *j = _Executor_new_job(e, pipeline);
+	Job *j = _Executor_new_job(e, pipeline, line);
 	if (!j) return ;
 
 	int idx = 0;
@@ -329,4 +329,21 @@ void Executor_print(Executor *e) {
 		Job *j = e->jobs[i];
 		if (j) Job_print(j);
 	}
+}
+
+Job *Executor_jobs_get(Executor *e, char *str_idx) {
+	Job *j = 0;
+
+	// current job
+	if (! strcmp(str_idx, "+")) {
+		j = e->current_job;
+	}
+	// get by id
+	else if (str_isdigit(str_idx)) {
+		int idx = atoi(str_idx) - 1;
+		if (idx < MAX_JOBS && idx >= 0)
+			j = e->jobs[idx];
+	}
+
+	return (j);
 }

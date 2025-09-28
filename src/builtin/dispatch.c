@@ -8,6 +8,7 @@ static const builtin BUILTINS[] = {
 	{"exit",	ft_exit},
 	{"echo",	ft_echo},
 	{"pwd",		ft_pwd},
+	{"jobs",	ft_jobs},
 	{0, 0}
 };
 

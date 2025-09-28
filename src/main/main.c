@@ -59,7 +59,7 @@ static void shell_loop() {
 		if (DEBUG) Parser_print(&parser);
 
 		// executor
-		Executor_exe(&executor, &parser.pipeline);
+		Executor_exe(&executor, &parser.pipeline, line);
 
 		// cleanup
 		Parser_clear(&parser);
@@ -67,7 +67,7 @@ static void shell_loop() {
 		if (line) free(line);
 		line = 0;
 
-		Executor_print(&executor);
+		if (DEBUG) Executor_print(&executor);
 	}
 	// cleanup
 	Parser_clear(&parser);

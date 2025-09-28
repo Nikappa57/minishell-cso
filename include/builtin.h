@@ -21,6 +21,7 @@ int			ft_unset(Executor *e, Command *c);
 int			ft_exit(Executor *e, Command *c);
 int			ft_echo(Executor *e, Command *c);
 int			ft_pwd(Executor *e, Command *c);
+int			ft_jobs(Executor *e, Command *c);
 
 /* utils */
 
