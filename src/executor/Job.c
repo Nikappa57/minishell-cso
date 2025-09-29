@@ -6,7 +6,7 @@ void	Job_init(Job *j, ListHead *pipeline, int idx, char *cmd_str) {
 	j->pgid = -1;
 	j->pipeline = pipeline;
 	j->idx = idx;
-	j->cmd_str = strdup(cmd_str);
+	j->cmd_str = strdup(cmd_str ? cmd_str : "");
 
 	// process list init
 	List_init(&j->process);
