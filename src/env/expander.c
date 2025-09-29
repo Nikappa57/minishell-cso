@@ -1,5 +1,6 @@
 # include "env.h"
 # include "Command.h"
+# include "utils.h"
 
 // $...
 static void expander_key(char **str, char **result) {
