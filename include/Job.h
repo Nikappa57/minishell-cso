@@ -13,11 +13,13 @@ typedef struct Job {
 	JobState	state;			// the job state
 	pid_t		pgid;			// gpid of child process
 	pid_t		last_pid;		// last child process pid
-	int			alive_process;		// number of child process
+	int			alive_process;	// number of child process
 	bool		background;		// true if job is running in background
 	ListHead	*pipeline;		// list of commands
 	int			idx;			// index of job in the job table
 	char		*cmd_str;		// input line (from readline)
+	uint64_t	stop_rank;		// rank for stopped process
+	uint64_t	bg_rank;		// rank for background process
 } Job;
 
 void	Job_init(Job *j, ListHead *pipeline, int idx, char *cmd_str);

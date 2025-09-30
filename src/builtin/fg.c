@@ -20,7 +20,6 @@ int ft_fg(Executor *e, Command *cmd) {
 
 	// update infos
 	j->background = false;
-	e->current_job = j;
 
 	// if job was stopped, send SIGCONT
 	if (j->state == JOB_STOPPED) {

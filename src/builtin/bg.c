@@ -19,10 +19,10 @@ int ft_bg(Executor *e, Command *cmd) {
 	// job is already running
 	if (j->state == JOB_RUNNING) {
 		if (j->background)
-			error(0, "bg: job %c already in background",
+			error(0, "bg: job %s already in background",
 				!strcmp(str_idx, "+") ? "current" : str_idx);
 		else
-			error(1, "bg: job %c is running in foreground",
+			error(1, "bg: job %s is running in foreground",
 				!strcmp(str_idx, "+") ? "current" : str_idx);
 		return (0);
 	}
@@ -36,8 +36,10 @@ int ft_bg(Executor *e, Command *cmd) {
 	// update infos
 	j->state = JOB_RUNNING;
 	j->background = true;
+	j->bg_rank = ++(e->max_rank);
 	str_append(&j->cmd_str, " &");
-	e->current_job = j;
+	if (e->current_job == j)
+		Executor_update_current_job(e);
 
 	// send an info msg
 	fprintf(stderr, "[%d] %s\n", j->idx + 1, j->cmd_str);

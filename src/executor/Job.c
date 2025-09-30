@@ -7,10 +7,10 @@ void	Job_init(Job *j, ListHead *pipeline, int idx, char *cmd_str) {
 	j->pipeline = pipeline;
 	j->idx = idx;
 	j->cmd_str = strdup(cmd_str ? cmd_str : "");
-
-	// process
 	j->last_pid = -1;
 	j->alive_process = 0;
+	j->stop_rank = 0;
+	j->bg_rank = 0;
 }
 
 void	Job_clear(Job *j) {
