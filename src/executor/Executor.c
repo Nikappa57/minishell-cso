@@ -120,7 +120,7 @@ static void _Executor_child(Executor *e, Job *j, Command *cmd, int p_idx, int *p
 }
 
 // create new job
-static Job *_Executor_new_job(Executor *e, ListHead *pipeline, char *line) {
+static Job *_Executor_job_add(Executor *e, ListHead *pipeline, char *line) {
 	// find first free idx
 	int j_idx = -1;
 	for (int i = 0; i < MAX_JOBS; i++) {
@@ -135,7 +135,7 @@ static Job *_Executor_new_job(Executor *e, ListHead *pipeline, char *line) {
 	}
 
 	Job *j = e->jobs[j_idx] = (Job *) calloc(1, sizeof(Job));
-	if (!j) handle_error("_Executor_new_job | malloc error");
+	if (!j) handle_error("_Executor_job_add | malloc error");
 
 	Job_init(j, pipeline, j_idx, line);
 	e->current_job = j;
@@ -216,7 +216,7 @@ void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 		return ;
 	}
 
-	Job *j = _Executor_new_job(e, pipeline, line);
+	Job *j = _Executor_job_add(e, pipeline, line);
 	if (!j) return ;
 
 	int idx = 0;
