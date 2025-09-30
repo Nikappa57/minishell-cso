@@ -5,34 +5,6 @@
 # include "Pipeline.h"
 # include "signals.h"
 
-void Executor_init(Executor *e) {
-	for (int i = 0; i < MAX_JOBS + 1; i++)
-		e->jobs[i] = 0;
-
-	// man: test whether a file descriptor refers to a terminal
-	e->interactive = isatty(STDIN_FILENO);
-	e->tty_fd = STDIN_FILENO;
-	if (e->interactive) {
-		// set gpid = pid for the shell process
-		e->shell_pgid = getpid();
-		int ret = setpgid(0, e->shell_pgid);
-		if (ret == -1) handle_error("Executor_init | setpgid error");
-		// give terminal to shell
-		give_terminal_to(e->shell_pgid, e->tty_fd);
-	}
-}
-
-void Executor_clear(Executor *e) {
-	// jobs list clear
-	for (int i = 0; i < MAX_JOBS; i++) {
-		if (e->jobs[i]) {
-			Job_clear(e->jobs[i]);
-			free(e->jobs[i]);
-			e->jobs[i] = 0;
-		}
-	}
-}
-
 static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 
 	(void)e;
@@ -171,6 +143,54 @@ static Job *_Executor_new_job(Executor *e, ListHead *pipeline, char *line) {
 	return (j);
 }
 
+// remove job from jobs table, free obj and adjust current_job
+static void _Executor_job_remove(Executor *e, Job *j) {
+	// remove job from the jobs table
+	e->jobs[j->idx] = 0;
+	// check if it's the current job
+	if (e->current_job == j) {
+		// update current_job to the first job in the table, if exist
+		e->current_job = 0;
+		for (int i = 0; i < MAX_JOBS; i++) {
+			if (e->jobs[i]) {
+				e->current_job = e->jobs[i];
+				break;
+			}
+		}
+	}
+	Job_clear(j);
+	free(j);
+}
+
+void Executor_init(Executor *e) {
+	for (int i = 0; i < MAX_JOBS + 1; i++)
+		e->jobs[i] = 0;
+
+	// man: test whether a file descriptor refers to a terminal
+	e->interactive = isatty(STDIN_FILENO);
+	e->tty_fd = STDIN_FILENO;
+	e->current_job = 0;
+	if (e->interactive) {
+		// set gpid = pid for the shell process
+		e->shell_pgid = getpid();
+		int ret = setpgid(0, e->shell_pgid);
+		if (ret == -1) handle_error("Executor_init | setpgid error");
+		// give terminal to shell
+		give_terminal_to(e->shell_pgid, e->tty_fd);
+	}
+	else
+		e->shell_pgid = 0;
+}
+
+void Executor_clear(Executor *e) {
+	// jobs list clear
+	for (int i = 0; i < MAX_JOBS; i++) {
+		if (e->jobs[i])
+			_Executor_job_remove(e, e->jobs[i]);
+	}
+	e->current_job = 0;
+}
+
 void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
 
@@ -304,10 +324,7 @@ void Executor_wait_job(Executor *e, Job *j) {
 	else
 		g_exit_code = 1;
 
-	// remove job from jobs table and free obj
-	Job_clear(j);
-	free(j);
-	e->jobs[j->idx] = 0;
+	_Executor_job_remove(e, j);
 }
 
 void Executor_print(Executor *e) {
