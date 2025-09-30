@@ -254,13 +254,11 @@ void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 
 void Executor_wait_job(Executor *e, Job *j) {
 	int		last_status	= 0;
-	int		process_n	= j->process.size;
-	pid_t	last_pid	= ((Process *) j->process.last)->pid;
 
 	// setup signals
 	set_shell_signals_exe();
 
-	while (process_n > 0) {
+	while (j->alive_process > 0) {
 		int status = 0;
 
 		// wait for any process in the group
@@ -278,31 +276,18 @@ void Executor_wait_job(Executor *e, Job *j) {
 			return ; // leave the job in the jobs table
 		}
 
-		// update Process status
-		for (ListItem *it = j->process.first; it; it = it->next) {
-			Process *p = (Process *) it;
-			assert(p && "Executor_wait_job | casting error");
-
-			// find the process by id
-			if (p->pid == w_pid) {
-				// update status
-				p->status = status;
-				break ;
-			}
-		}
-
-		// if process is finished, reduce process_n
+		// if process is finished, reduce alive_process
 		if (WIFEXITED(status) || WIFSIGNALED(status)) {
 			// save last command status
-			if (w_pid == last_pid) last_status = status;
-			--process_n;
+			if (w_pid == j->last_pid) last_status = status;
+			--(j->alive_process);
 		}
 	}
 
-	assert(process_n == 0 && "_Executor_wait_job | process_n is not zero");
+	assert(j->alive_process == 0 && "_Executor_wait_job | alive_process is not zero");
 
 	// set job as done
-	// process_n = 0 => job is done
+	// alive_process = 0 => job is done
 	j->state = JOB_DONE;
 
 	// update exit code
