@@ -119,48 +119,12 @@ static void _Executor_child(Executor *e, Job *j, Command *cmd, int p_idx, int *p
 		error(126, "Command error: %s: ", cmd->argv[0], strerror(errno));
 }
 
-// create new job
-static Job *_Executor_job_add(Executor *e, ListHead *pipeline, char *line) {
-	// find first free idx
-	int j_idx = -1;
-	for (int i = 0; i < MAX_JOBS; i++) {
-		if (e->jobs[i] == 0) {
-			j_idx = i;
-			break;
-		}
-	}
-	if (j_idx == -1) {
-		error(1, "jobs: table full");
-		return (0);
-	}
-
-	Job *j = e->jobs[j_idx] = (Job *) calloc(1, sizeof(Job));
-	if (!j) handle_error("_Executor_job_add | malloc error");
-
-	Job_init(j, pipeline, j_idx, line);
-	return (j);
-}
-
-// remove job from jobs table, free obj and adjust current_job
-static void _Executor_job_remove(Executor *e, Job *j) {
-	// remove job from the jobs table
-	e->jobs[j->idx] = 0;
-	// check if it's the current job
-	if (e->current_job == j)
-		Executor_update_current_job(e);
-	Job_clear(j);
-	free(j);
-}
 
 void Executor_init(Executor *e) {
-	for (int i = 0; i < MAX_JOBS + 1; i++)
-		e->jobs[i] = 0;
-
 	// man: test whether a file descriptor refers to a terminal
 	e->interactive = isatty(STDIN_FILENO);
 	e->tty_fd = STDIN_FILENO;
-	e->current_job = 0;
-	e->max_rank = 0;
+	JobTable_init(&e->jobs);
 	if (e->interactive) {
 		// set gpid = pid for the shell process
 		e->shell_pgid = getpid();
@@ -175,11 +139,7 @@ void Executor_init(Executor *e) {
 
 void Executor_clear(Executor *e) {
 	// jobs list clear
-	for (int i = 0; i < MAX_JOBS; i++) {
-		if (e->jobs[i])
-			_Executor_job_remove(e, e->jobs[i]);
-	}
-	e->current_job = 0;
+	JobsTable_destroy(&e->jobs);
 }
 
 void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
@@ -207,7 +167,7 @@ void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 		return ;
 	}
 
-	Job *j = _Executor_job_add(e, pipeline, line);
+	Job *j = JobsTable_add(&e->jobs, pipeline, line);
 	if (!j) return ;
 
 	int idx = 0;
@@ -281,10 +241,10 @@ void Executor_wait_job(Executor *e, Job *j) {
 
 		// CTR-Z : job stopped
 		if (WIFSTOPPED(status)) {
-			j->state = JOB_STOPPED;			// update state
+			j->state = JOB_STOPPED;					// update state
 			j->background = false;
-			j->stop_rank = ++(e->max_rank);	// increase stop_rank
-			e->current_job = j;				// set as current job
+			j->stop_rank = ++(e->jobs.max_rank);	// increase stop_rank
+			e->jobs.current = j;					// set as current job
 			fprintf(stderr, "\n[%d]  Stopped\n", (int)j->idx + 1);
 			g_exit_code = (unsigned char)(128 + WSTOPSIG(status)); // 148 for SIGTSTP
 			return ; // leave the job in the jobs table
@@ -318,12 +278,12 @@ void Executor_wait_job(Executor *e, Job *j) {
 	else
 		g_exit_code = 1;
 
-	if (e->current_job == j) {
-		e->jobs[j->idx] = 0;
-		Executor_update_current_job(e);
+	if (e->jobs.current == j) {
+		e->jobs.table[j->idx] = 0;
+		JobsTable_update_current(&e->jobs);
 	}
 
-	_Executor_job_remove(e, j);
+	JobsTable_remove(&e->jobs, j);
 }
 
 void Executor_print(Executor *e) {
@@ -332,53 +292,7 @@ void Executor_print(Executor *e) {
 	printf("tty fd: %d | shell pgid: %d\n", e->tty_fd, e->shell_pgid);
 	printf("JOBS table:\n");
 	for (int i = 0; i < MAX_JOBS; ++i) {
-		Job *j = e->jobs[i];
+		Job *j = e->jobs.table[i];
 		if (j) Job_print(j);
 	}
-}
-
-void Executor_update_current_job(Executor *e) {
-	Job			*best		= 0;
-	uint64_t	best_rank	= 0;
-
-	// find most recent stopped job
-	for (int i = 0; i < MAX_JOBS; ++i) {
-		Job *j = e->jobs[i];
-		if (j && j->state == JOB_STOPPED && j->stop_rank >= best_rank) {
-			best_rank = j->stop_rank;
-			best = j;
-		}
-	}
-	if (best) {
-		e->current_job = best;
-		return ;
-	}
-
-	// else find oldest running job (min bg rank)
-	best_rank = e->max_rank;
-	for (int i = 0; i < MAX_JOBS; ++i) {
-		Job *j = e->jobs[i];
-		if (j && j->state == JOB_RUNNING && j->background && j->bg_rank <= best_rank) {
-			best_rank = j->bg_rank;
-			best = j;
-		}
-	}
-	e->current_job = best;
-}
-
-Job *Executor_jobs_get(Executor *e, char *str_idx) {
-	Job *j = 0;
-
-	// current job
-	if (! strcmp(str_idx, "+")) {
-		j = e->current_job;
-	}
-	// get by id
-	else if (str_isdigit(str_idx)) {
-		int idx = atoi(str_idx) - 1;
-		if (idx < MAX_JOBS && idx >= 0)
-			j = e->jobs[idx];
-	}
-
-	return (j);
 }

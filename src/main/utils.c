@@ -17,3 +17,17 @@ void char_append(char **s1, char c) {
 	const char s2[] = {c, 0};
 	str_append(s1, s2);
 }
+
+
+bool str_isdigit(const char *s) {
+	if (! s || ! *s) return (false);
+
+	int i = 0;
+	// skip sign
+	if ((s[i] == '+' || s[i] == '-') && s[i + 1])
+		i++;
+	while (s[i])
+		if (!isdigit(s[i++]))
+			return (false);
+	return (true);
+}

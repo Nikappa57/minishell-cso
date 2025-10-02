@@ -9,7 +9,7 @@ int ft_bg(Executor *e, Command *cmd) {
 
 	// find job by arg (the default is current job)
 	char *str_idx = (cmd->argc == 1) ? "+" : cmd->argv[1];
-	Job *j = Executor_jobs_get(e, str_idx);
+	Job *j = JobsTable_get(&e->jobs, str_idx);
 
 	// job not found
 	if (!j || j->state == JOB_DONE) {
@@ -36,10 +36,10 @@ int ft_bg(Executor *e, Command *cmd) {
 	// update infos
 	j->state = JOB_RUNNING;
 	j->background = true;
-	j->bg_rank = ++(e->max_rank);
+	j->bg_rank = ++(e->jobs.max_rank);
 	str_append(&j->cmd_str, " &");
-	if (e->current_job == j)
-		Executor_update_current_job(e);
+	if (e->jobs.current == j)
+		JobsTable_update_current(&e->jobs);
 
 	// send an info msg
 	fprintf(stderr, "[%d] %s\n", j->idx + 1, j->cmd_str);

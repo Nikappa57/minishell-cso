@@ -8,7 +8,7 @@ int ft_fg(Executor *e, Command *cmd) {
 
 	// find job by arg (the default is current job)
 	char *str_idx = (cmd->argc == 1) ? "+" : cmd->argv[1];
-	Job *j = Executor_jobs_get(e, str_idx);
+	Job *j = JobsTable_get(&e->jobs, str_idx);
 
 	// job not found
 	if (!j || j->state == JOB_DONE)
