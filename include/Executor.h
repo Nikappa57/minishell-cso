@@ -19,6 +19,7 @@ void Executor_print(Executor *e);
 
 void Executor_exe(Executor *e, ListHead *pipeline, char *line);
 void Executor_wait_job(Executor *e, Job *j);
+void Executor_update_jobs(Executor *e);
 
 /* utils */
 

@@ -143,6 +143,18 @@ void Executor_clear(Executor *e) {
 	IntHashTable_clear(&e->process_map);
 }
 
+void Executor_print(Executor *e) {
+	printf("*** Executor ***\n");
+	printf("interactive: %s\n", e->interactive ? "yes" : "no");
+	printf("tty fd: %d | shell pgid: %d\n", e->tty_fd, e->shell_pgid);
+	printf("JOBS table:\n");
+	for (int i = 0; i < MAX_JOBS; ++i) {
+		Job *j = e->jobs.table[i];
+		if (j) Job_print(j);
+	}
+}
+
+
 void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
 
@@ -283,21 +295,58 @@ void Executor_wait_job(Executor *e, Job *j) {
 	else
 		g_exit_code = 1;
 
-	if (e->jobs.current == j) {
-		e->jobs.table[j->idx] = 0;
-		JobsTable_update_current(&e->jobs);
-	}
-
 	JobsTable_remove(&e->jobs, j);
 }
 
-void Executor_print(Executor *e) {
-	printf("*** Executor ***\n");
-	printf("interactive: %s\n", e->interactive ? "yes" : "no");
-	printf("tty fd: %d | shell pgid: %d\n", e->tty_fd, e->shell_pgid);
-	printf("JOBS table:\n");
-	for (int i = 0; i < MAX_JOBS; ++i) {
-		Job *j = e->jobs.table[i];
-		if (j) Job_print(j);
+void Executor_update_jobs(Executor *e) {
+	IntHashTable	*pid_tab = &e->process_map;
+	JobsTable		*job_tab = &e->jobs;
+
+	while (42) {
+		int status;
+		pid_t pid = waitpid(-1, &status, WNOHANG | WUNTRACED | WCONTINUED);
+		if (pid == 0) break ;
+		if (pid < 0) {
+			if (errno == EINTR) continue ;
+			break ; // no process to wait
+		}
+
+		// get job index
+		const int *j_idx = IntHashTable_get(pid_tab, pid);
+		if (! j_idx) {
+			error(1, "[%d] unknown child terminated [1]", pid);
+			continue ;
+		}
+		
+		// get job obj
+		Job *j = job_tab->table[*j_idx];
+		if (! j) {
+			error(1, "[%d] unknown child terminated [2]", pid);
+			continue ;
+		}
+
+		// CTR-Z : job stopped
+		if (WIFSTOPPED(status)) {
+			j->state = JOB_STOPPED;
+			j->background = false;
+			j->stop_rank = ++(job_tab->max_rank);	// increase stop_rank
+			job_tab->current = j;					// set as current job
+			fprintf(stderr, "\n[%d]  Stopped\n", (int)j->idx + 1);
+		}
+		// process is finished
+		else if (WIFEXITED(status) || WIFSIGNALED(status)) {
+			--(j->alive_process);
+			// remove pid from pid-process table
+			IntHashTable_remove(pid_tab, pid);
+
+			// check if the job is done
+			if (j->alive_process <= 0) {
+				j->state = JOB_DONE;
+				// the job remain in the jobs table until next jobs cmd
+			}
+		}
+		else if (WIFCONTINUED(status)) {
+			j->state = JOB_RUNNING;
+		}
 	}
 }

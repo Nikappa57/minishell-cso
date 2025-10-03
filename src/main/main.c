@@ -19,6 +19,9 @@ static void shell_loop() {
 		// ignore signals in shell process
 		set_shell_signals();
 
+		// update jobs info
+		Executor_update_jobs(&executor);
+
 		// readline
 		line = readline(">> ");
 		if (!line) { // EOF
@@ -26,6 +29,9 @@ static void shell_loop() {
 			break ;
 		}
 		if (*line) add_history(line); // save line in history
+
+		// update jobs info
+		Executor_update_jobs(&executor);
 
 		// lexer
 		int ret = Lexer_line(&lexer, line);

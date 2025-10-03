@@ -15,8 +15,12 @@ int ft_jobs(Executor *e, Command *cmd) {
 	// no args -> print all jobs
 	if (cmd->argc == 1) {
 		for (int i = 0; i < MAX_JOBS; i++) {
-			if (e->jobs.table[i])
-				job_print(e, e->jobs.table[i]);
+			Job *j = e->jobs.table[i];
+			if (j) {
+				job_print(e, j);
+				if (j->state == JOB_DONE)
+					JobsTable_remove(&e->jobs, j);
+			}
 		}
 	}
 

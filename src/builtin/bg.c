@@ -29,7 +29,7 @@ int ft_bg(Executor *e, Command *cmd) {
 	
 	// job is stopped
 
-	// send SIGCOUNT
+	// send SIGCONT
 	if (kill(-j->pgid, SIGCONT) < 0)
 		return (error(1, "bg: SIGCONT: %s", strerror(errno)), 1);
 
