@@ -2,13 +2,15 @@
 
 # include "common.h"
 # include "Job.h"
+# include "IntHashTable.h"
 # include <sys/types.h>
 
 typedef struct {
-	JobsTable	jobs;
-	bool		interactive;
-	int			tty_fd;
-	pid_t		shell_pgid;
+	JobsTable		jobs;
+	IntHashTable	process_map;		// map pid to job index
+	bool			interactive;
+	int				tty_fd;
+	pid_t			shell_pgid;
 } Executor;
 
 void Executor_init(Executor *e);

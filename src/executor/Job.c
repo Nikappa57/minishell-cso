@@ -32,7 +32,6 @@ void	Job_print(Job *j) {
 void	Job_add_process(Job *j, pid_t pid) {
 	j->last_pid = pid;
 	++(j->alive_process);
-	// TODO: add to pid-job map
 }
 
 /* Jobs table */

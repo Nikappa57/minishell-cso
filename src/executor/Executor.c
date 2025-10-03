@@ -125,6 +125,7 @@ void Executor_init(Executor *e) {
 	e->interactive = isatty(STDIN_FILENO);
 	e->tty_fd = STDIN_FILENO;
 	JobTable_init(&e->jobs);
+	IntHashTable_init(&e->process_map);
 	if (e->interactive) {
 		// set gpid = pid for the shell process
 		e->shell_pgid = getpid();
@@ -138,8 +139,8 @@ void Executor_init(Executor *e) {
 }
 
 void Executor_clear(Executor *e) {
-	// jobs list clear
 	JobsTable_destroy(&e->jobs);
+	IntHashTable_clear(&e->process_map);
 }
 
 void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
@@ -203,6 +204,8 @@ void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 
 			// create a new process
 			Job_add_process(j, pid);
+			// add pid to table
+			IntHashTable_add(&e->process_map, pid, j->idx);
 		}
 	}
 
@@ -255,6 +258,8 @@ void Executor_wait_job(Executor *e, Job *j) {
 			// save last command status
 			if (w_pid == j->last_pid) last_status = status;
 			--(j->alive_process);
+			// remove pid from pid-process table
+			IntHashTable_remove(&e->process_map, w_pid);
 		}
 	}
 

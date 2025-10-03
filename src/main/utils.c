@@ -18,7 +18,6 @@ void char_append(char **s1, char c) {
 	str_append(s1, s2);
 }
 
-
 bool str_isdigit(const char *s) {
 	if (! s || ! *s) return (false);
 
