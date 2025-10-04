@@ -1,10 +1,4 @@
-# include "common.h"
-# include "Lexer.h"
-# include "Parser.h"
-# include "env.h"
-# include "Executor.h"
-# include "redirections.h"
-# include "signals.h"
+# include "main.h"
 
 // main loop
 static void shell_loop() {
@@ -15,6 +9,7 @@ static void shell_loop() {
 
 	Lexer_init(&lexer);
 	Executor_init(&executor);
+	print_start();
 	while (g_alive) {
 		// ignore signals in shell process
 		set_shell_signals();
@@ -23,7 +18,7 @@ static void shell_loop() {
 		Executor_update_jobs(&executor);
 
 		// readline
-		line = readline(">> ");
+		line = readline(get_prompt_string());
 		if (!line) { // EOF
 			fprintf(stderr, "exit\n");
 			break ;
