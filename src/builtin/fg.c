@@ -14,6 +14,9 @@ int ft_fg(Executor *e, Command *cmd) {
 	if (!j || j->state == JOB_DONE)
 		return (error(1, "fg: %s: no such job",
 			!strcmp(str_idx, "+") ? "current" : str_idx), 0);
+
+	// print cmd
+	fprintf(stderr, "%s\n", j->cmd_str);
 	
 	// give terminal to job
 	give_terminal_to(j->pgid, e->tty_fd);

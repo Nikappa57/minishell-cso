@@ -154,7 +154,6 @@ void Executor_print(Executor *e) {
 	}
 }
 
-
 void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
 
@@ -256,12 +255,14 @@ void Executor_wait_job(Executor *e, Job *j) {
 
 		// CTR-Z : job stopped
 		if (WIFSTOPPED(status)) {
-			j->state = JOB_STOPPED;					// update state
-			j->background = false;
-			j->stop_rank = ++(e->jobs.max_rank);	// increase stop_rank
-			e->jobs.current = j;					// set as current job
-			fprintf(stderr, "\n[%d]  Stopped\n", (int)j->idx + 1);
-			g_exit_code = (unsigned char)(128 + WSTOPSIG(status)); // 148 for SIGTSTP
+			if (j->state != JOB_STOPPED) {
+				j->state = JOB_STOPPED;					// update state
+				j->background = false;
+				j->stop_rank = ++(e->jobs.max_rank);	// increase stop_rank
+				e->jobs.current = j;					// set as current job
+				fprintf(stderr, "\n[%d]  Stopped\n", (int)j->idx + 1);
+				g_exit_code = (unsigned char)(128 + WSTOPSIG(status)); // 148 for SIGTSTP
+			}
 			return ; // leave the job in the jobs table
 		}
 
@@ -327,11 +328,13 @@ void Executor_update_jobs(Executor *e) {
 
 		// CTR-Z : job stopped
 		if (WIFSTOPPED(status)) {
-			j->state = JOB_STOPPED;
-			j->background = false;
-			j->stop_rank = ++(job_tab->max_rank);	// increase stop_rank
-			job_tab->current = j;					// set as current job
-			fprintf(stderr, "\n[%d]  Stopped\n", (int)j->idx + 1);
+			if (j->state != JOB_STOPPED) {
+				j->state = JOB_STOPPED;
+				j->background = false;
+				j->stop_rank = ++(job_tab->max_rank);	// increase stop_rank
+				job_tab->current = j;					// set as current job
+				fprintf(stderr, "[%d] %s Stopped\n", (int)j->idx + 1, j->cmd_str);
+			}
 		}
 		// process is finished
 		else if (WIFEXITED(status) || WIFSIGNALED(status)) {
@@ -343,6 +346,7 @@ void Executor_update_jobs(Executor *e) {
 			if (j->alive_process <= 0) {
 				j->state = JOB_DONE;
 				// the job remain in the jobs table until next jobs cmd
+				fprintf(stderr, "[%d] %s Done\n", (int)j->idx + 1, j->cmd_str);
 			}
 		}
 		else if (WIFCONTINUED(status)) {
