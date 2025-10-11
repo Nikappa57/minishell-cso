@@ -152,6 +152,7 @@ void Executor_print(Executor *e) {
 		Job *j = e->jobs.table[i];
 		if (j) Job_print(j);
 	}
+	IntHashTable_print(&e->process_map);
 }
 
 void Executor_exe(Executor *e, ListHead *pipeline, char *line) {

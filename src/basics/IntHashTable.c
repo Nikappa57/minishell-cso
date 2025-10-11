@@ -71,3 +71,23 @@ void	IntHashTable_remove(IntHashTable *t, int key) {
 		}
 	}
 }
+
+void	IntHashTable_print(IntHashTable *t) {
+	for (int i = 0; i < INT_HASH_TABLE_SIZE; i++) {
+		ListHead *l = &t->table[i];
+		
+		if (l->size && l->first) {
+			printf("[%d] {", i);
+			ListItem* aux = l->first;
+			while (aux) {
+				IntHashItem *item = (IntHashItem *) aux;
+				assert(item && "IntHashTable_clear | invalid token cast");
+				printf("%d: %d", item->key, item->value);
+				aux = aux->next;
+				if (aux)
+					printf(", ");
+			}
+			printf("}\n");
+		}
+	}
+}
