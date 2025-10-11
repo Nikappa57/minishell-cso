@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Arguments not allowed\n");
 		return (EXIT_ERROR);
 	}
-	// init env (updare shell level)
+	// init env (update shell level)
 	env_init();
 	if (DEBUG) env_print();
 

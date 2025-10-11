@@ -1,10 +1,5 @@
 # minishell-cso
 
-### TODO:
-
-- [ ] add bg and fg
-- [ ] zoombie
-
 ### readline dep
 sudo apt-get install libreadline-dev
 
