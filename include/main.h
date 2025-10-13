@@ -10,3 +10,4 @@
 
 void	print_start();
 char*	get_prompt_string();
+void	init_readline_completion();

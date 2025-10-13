@@ -89,6 +89,9 @@ int main(int argc, char **argv) {
 	env_init();
 	if (DEBUG) env_print();
 
+	// init readline
+	init_readline_completion();
+
 	// start main loop
 	shell_loop();
 

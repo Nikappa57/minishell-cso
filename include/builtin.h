@@ -12,6 +12,9 @@ typedef struct {
 	builtin_fn	fn;
 } builtin;
 
+extern const builtin BUILTINS[];
+
+
 builtin_fn	find_builtin(Command *cmd);
 
 int			ft_cd(Executor *e, Command *c);
