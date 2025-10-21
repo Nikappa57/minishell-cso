@@ -11,14 +11,18 @@ void Token_print(Token *t) {
 	printf("%s", TokenType_repr[t->type]);
 	if (t->type == T_WORD) {
 		assert(t->text && "Token_print|Text is null");
-		printf(" :\"");
+		printf(" (");
 		for (int i = 0; t->text[i]; i++) {
 			if (t->text[i] == MARK_SQ)
 				printf("<SQ>");
+			else if (t->text[i] == MARK_DQ)
+				printf("<DQ>");
+			else if (t->text[i] == MARK_KEY)
+				printf("<KEY>");
 			else
 				putchar(t->text[i]);
 		}
-		printf("\"");
+		printf(")");
 	}
 }
 
