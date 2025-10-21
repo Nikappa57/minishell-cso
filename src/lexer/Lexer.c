@@ -33,16 +33,30 @@ static int _Lexer_line_word(ListHead *l, char **str_p) {
 		else if ((*str == '"') || (*str == '\'')) {
 			char c = *str++; // save quote type and skip it
 			// save mark for expander
-			buf[i++] = c == '\'' ? MARK_SQ : MARK_DQ;
+			buf[i++] = (c == '\'') ? MARK_SQ : MARK_DQ;
 			// skip to next quote
 			while (*str != c) {
 				if (eol(str))
 					return (error(1, "lexer error: Unclosed quotes!"), free(token), -1);
-				buf[i++] = (*str == '$') ? MARK_KEY : *str;
-				str++; // skip char
+
+				// single quotes
+				if (c == '\'')
+					buf[i++] = *str++;
+				// duoble quotes
+				else {
+					// handle backslash in double quotes
+					if (str[0] == '\\' && (str[1] == '"' || str[1] == '\\' || str[1] == '$')) {
+						buf[i++] = str[1]; // copy
+						str += 2; // skip to next char
+					}
+					else {
+						buf[i++] = (*str == '$') ? MARK_KEY : *str;
+						str++; // skip char
+					}
+				}
 			}
 			// save mark for expander
-			buf[i++] = c == '\'' ? MARK_SQ : MARK_DQ;
+			buf[i++] = (c == '\'') ? MARK_SQ : MARK_DQ;
 			str++; // skip last quote
 		}
 
