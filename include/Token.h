@@ -25,7 +25,7 @@ typedef struct {
 	char		*text;	// for T_WORD type
 }	Token;
 
-void		Token_init(Token *t);
+void		Token_init(Token *t, TokenType type);
 void		Token_print(Token *t);
 void		Token_free(Token *t);
 

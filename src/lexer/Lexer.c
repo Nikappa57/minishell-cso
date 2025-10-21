@@ -4,12 +4,72 @@ void Lexer_init(ListHead *l) {
 	List_init(l);
 }
 
+static int _Lexer_line_word(ListHead *l, char **str_p) {
+	// word
+	char		buf[MAX_LINE_LEN + 1] = {0};
+	size_t		i = 0;
+
+	// create token
+	Token *token = (Token *) malloc(sizeof(Token));
+	if (! token) handle_error("_Lexer_line_word | malloc token");
+	Token_init(token, T_WORD);
+
+	char *str = *str_p;
+	while (21) {
+		// check if word is finished
+		if (eol(str)
+			|| isspace((unsigned char)*str)
+			|| check_operator(str) != T_NONE)
+			break;
+
+		// backslash
+		else if (*str == '\\') {
+			if (eol(++str)) // skip slash and check if is not closed
+				return (error(1, "lexer error: Unclosed back slash!"), free(token), -1);
+			buf[i++] = *(str++); // save next char
+		}
+
+		// quotes
+		else if ((*str == '"') || (*str == '\'')) {
+			char c = *str++; // save quote type and skip it
+			// save mark for expander
+			buf[i++] = c == '\'' ? MARK_SQ : MARK_DQ;
+			// skip to next quote
+			while (*str != c) {
+				if (eol(str))
+					return (error(1, "lexer error: Unclosed quotes!"), free(token), -1);
+				buf[i++] = (*str == '$') ? MARK_KEY : *str;
+				str++; // skip char
+			}
+			// save mark for expander
+			buf[i++] = c == '\'' ? MARK_SQ : MARK_DQ;
+			str++; // skip last quote
+		}
+
+		// normal char
+		else {
+			buf[i++] = (*str == '$') ? MARK_KEY : *str;
+			str++; // skip char
+		}
+	}
+	buf[i] = 0;
+	assert(i <= MAX_LINE_LEN && "_Lexer_line_word | i > MAX_LINE_LEN");
+	assert(token->text == 0 && "_Lexer_line_word | token text is not Null");
+	token->text = strndup(buf, i);
+	if (! token->text) handle_error("_Lexer_line_word | malloc token test");
+	// add to list
+	List_insert(l, l->last, &token->list);
+
+	*str_p = str;
+	return (0);
+}
+
 /*
 * return 0: OK, -1: ERR -> skip other steps
 */
 int Lexer_line(ListHead *l, char *str) {
 	if (!str || !*str)
-		return -1;
+		return (-1);
 	if (strlen(str) > MAX_LINE_LEN)
 		return (error(1, "lexer error: max line length\n"), -1);
 
@@ -17,73 +77,29 @@ int Lexer_line(ListHead *l, char *str) {
 		skip_ws(&str);
 		if (eol(str)) break;	// end
 
-		Token *token = (Token *) malloc(sizeof(Token));
-		if (! token) handle_error("Lexer_line | malloc token");
-		Token_init(token);
-
 		// operator
 		TokenType tt = check_operator(str);
 		if (tt != T_NONE) {  // operator found
 			str += OP_LEN[tt];  // skip operator token
-			token->type = tt;
-			// insert using token's list member
+
+			// create token
+			Token *token = (Token *) malloc(sizeof(Token));
+			if (! token) handle_error("Lexer_line | malloc token");
+			Token_init(token, tt);
+
+			// insert new token in token list
 			List_insert(l, l->last, &token->list);
 			continue;
 		}
 
-		// word
-		char		buf[MAX_LINE_LEN + 1] = {0};
-		size_t		i = 0;
-
-		token->type = T_WORD;
-		while (21) {
-			// check if word is finished
-			if (eol(str)
-				|| isspace((unsigned char)*str)
-				|| check_operator(str) != T_NONE)
-				break;
-
-			// backslash
-			else if (*str == '\\') {
-				if (eol(++str)) // skip slash and check if is not closed
-					return (error(1, "lexer error: Unclosed back slash!"), free(token), -1);
-				buf[i++] = *(str++); // save next char
-			}
-
-			// quotes
-			else if ((*str == '"') || (*str == '\'')) {
-				char c = *str++; // save quote type and skip it
-				// save mark for expander
-				buf[i++] = c == '\'' ? MARK_SQ : MARK_DQ;
-				// skip to next quote
-				while (*str != c) {
-					if (eol(str))
-						return (error(1, "lexer error: Unclosed quotes!"), free(token), -1);
-					buf[i++] = (*str == '$') ? MARK_KEY : *str;
-					str++; // skip char
-				}
-				// save mark for expander
-				buf[i++] = c == '\'' ? MARK_SQ : MARK_DQ;
-				str++; // skip last quote
-			}
-
-			// normal char
-			else {
-				buf[i++] = (*str == '$') ? MARK_KEY : *str;
-				str++; // skip char
-			}
-		}
-		buf[i] = 0;
-		assert(i <= MAX_LINE_LEN && "Lexer_line | i > MAX_LINE_LEN");
-		token->text = strndup(buf, i);
-		if (! token->text) handle_error("Lexer_line | malloc token test");
-		// add to list
-		List_insert(l, l->last, &token->list);
+		// T_WORD
+		int ret = _Lexer_line_word(l, &str);
+		if (ret == -1) return (-1);
 	}
 	// add to list T_NONE as end of line
 	Token *token = (Token *) malloc(sizeof(Token));
 	if (! token) handle_error("Lexer_line | malloc token");
-	Token_init(token); // Token type = T_NONE
+	Token_init(token, T_NONE); // Token type = T_NONE
 	List_insert(l, l->last, &token->list);
 	return (0);
 }

@@ -1,8 +1,8 @@
 #include "Token.h"
 
-void Token_init(Token *t) {
+void Token_init(Token *t, TokenType type) {
 	t->text = 0;
-	t->type = T_NONE;
+	t->type = type;
 	t->list.next = t->list.prev = 0;
 }
 
