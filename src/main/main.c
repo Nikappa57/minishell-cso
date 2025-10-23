@@ -80,8 +80,7 @@ static void shell_loop() {
 
 int main(int argc, char **argv) {
 	(void)argv;
-	if (argc != 1)
-	{
+	if (argc != 1) {
 		fprintf(stderr, "Arguments not allowed\n");
 		return (EXIT_ERROR);
 	}

@@ -39,16 +39,22 @@ void Parser_error(Parser *p) {
 }
 
 /*
-	1 -> ok, and the cmd is updated
-	0 -> ok, no update
+	1 -> ok, and an item is found
+	0 -> ok, but no item is found
 	-1 -> error
+
+	item := T_WORD
+		| T_RED_OUT		T_WORD
+		| T_RED_OUT_APP	T_WORD
+		| T_RED_IN		T_WORD
+		| T_HEREDOC		T_WORD;
 */
 int Parser_item(Parser *p, Command *c) {
 	assert(p && "Parser_item | parser is Null");
 	assert(p->current_token && "Parser_item | current token is Null");
 	assert(c && "Parser_item | command is Null");
 
-	// text
+	// T_WORD
 	if (p->current_token->type == T_WORD) {
 		Command_add_arg(c, p->current_token->text);
 		p->current_token = (Token *) p->current_token->list.next; // next
@@ -59,9 +65,11 @@ int Parser_item(Parser *p, Command *c) {
 		|| (p->current_token->type == T_RED_OUT)
 		|| (p->current_token->type == T_RED_OUT_APP)
 		|| (p->current_token->type == T_HEREDOC)) {
+		// save redirection type
 		RedType rd = token_to_red(p->current_token->type);
 		p->current_token = (Token *) p->current_token->list.next; // next
-		if (p->current_token->type != T_WORD) // must be T_WORD
+		// must be T_WORD
+		if (p->current_token->type != T_WORD)
 			return (Parser_error(p), -1);
 		Command_add_redirection(c, rd, p->current_token->text);
 		p->current_token = (Token *) p->current_token->list.next; // next
@@ -73,6 +81,8 @@ int Parser_item(Parser *p, Command *c) {
 /*
 	0 -> ok
 	-1 -> error
+
+	cmd := item {item};
 */
 int Parser_cmd(Parser *p) {
 	assert(p && "Parser_cmd | parser is Null");
@@ -82,33 +92,43 @@ int Parser_cmd(Parser *p) {
 	if (! c) handle_error("Parser_cmd | malloc error");
 	Command_init(c);
 
-	// if cmd is required, item is required
+	// item (at least one item is required)
 	int ret = Parser_item(p, c);
-	if (ret == -1) return (Command_free(c), free(c), -1); // -1 error
-	if (ret == 0) return (Parser_error(p), Command_free(c), free(c), -1); // item is required
+	if (ret == -1) return (Command_free(c), free(c), -1);
+	// item not found -> parser error
+	if (ret == 0) return (Parser_error(p), Command_free(c), free(c), -1);
 
-	while (ret == 1) {
+	// {item}
+	while (ret == 1) { // while there is an item
 		ret = Parser_item(p, c);
 		if (ret == -1) return (Command_free(c), free(c), -1);
 	}
+	// append cmd to pipeline
 	List_insert(&p->pipeline, p->pipeline.last, &c->list);
-	return (1);
+	return (0);
 }
 
 /*
 	0 -> ok
 	-1 -> error
+
+	pipeline := cmd {T_PIPE cmd};
 */
 int Parser_pipeline(Parser *p) {
 	assert(p && "Parser_pipeline | parser is Null");
 	assert(p->current_token && "Parser_pipeline | current token is Null");
 
+	// cmd (at leat one cmd is required)
 	int ret = Parser_cmd(p);
 	if (ret == -1) return (-1);
+	// {T_PIPE cmd}
 	while (p->current_token->type != T_NONE) {
+		// T_PIPE
 		if (p->current_token->type != T_PIPE)
 			return (Parser_error(p), -1);
 		p->current_token = (Token *) p->current_token->list.next; // next
+
+		// cmd
 		ret = Parser_cmd(p);
 		if (ret == -1) return (-1);
 		if (p->pipeline.size > MAX_CMDS)
