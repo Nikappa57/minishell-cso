@@ -51,7 +51,7 @@ int		*IntHashTable_get(IntHashTable *t, int key) {
 	for (ListItem *it = t->table[hash_key].first; it; it = it->next) {
 		IntHashItem *item = (IntHashItem *) it;
 		assert(item && "IntHashTable_get | invalid cast");
-		if ((item->key == key))
+		if (item->key == key)
 			return (&item->value);
 	}
 	return (0);
@@ -64,7 +64,7 @@ void	IntHashTable_remove(IntHashTable *t, int key) {
 	for (ListItem *it = list->first; it; it = it->next) {
 		IntHashItem *item = (IntHashItem *) it;
 		assert(item && "IntHashTable_get | invalid cast");
-		if ((item->key == key)) {
+		if (item->key == key) {
 			List_detach(list, it);
 			free(item);
 			return ;
