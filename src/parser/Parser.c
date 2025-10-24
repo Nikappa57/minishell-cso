@@ -1,18 +1,16 @@
 # include "Parser.h"
 # include "Pipeline.h"
 
-void Parser_init(Parser *p, ListHead *token_list) {
+void Parser_init(Parser *p) {
 	assert(p && "Parser_init | parser is Null");
 	List_init(&p->pipeline);
-
-	assert(token_list->size && token_list->first && "Parser_init | empty token list");
-	p->current_token = (Token *) token_list->first;
+	p->current_token = 0;
 }
 
 void Parser_clear(Parser *p) {
 	assert(p && "Parser_clear | parser is Null");
 	Pipeline_clear(&p->pipeline);
-	p->current_token = NULL;
+	p->current_token = 0;
 }
 
 void Parser_print(Parser *p) {
@@ -114,9 +112,11 @@ int Parser_cmd(Parser *p) {
 
 	pipeline := cmd {T_PIPE cmd};
 */
-int Parser_pipeline(Parser *p) {
+int Parser_pipeline(Parser *p, ListHead *token_list) {
 	assert(p && "Parser_pipeline | parser is Null");
-	assert(p->current_token && "Parser_pipeline | current token is Null");
+	assert(token_list && "Parser_pipeline | current token is Null");
+
+	p->current_token = (Token *) token_list->first;
 
 	// cmd (at leat one cmd is required)
 	int ret = Parser_cmd(p);

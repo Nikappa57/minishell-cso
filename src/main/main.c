@@ -8,6 +8,7 @@ static void shell_loop() {
 	Executor	executor;
 
 	Lexer_init(&lexer);
+	Parser_init(&parser);
 	Executor_init(&executor);
 	print_start();
 	while (g_alive) {
@@ -39,8 +40,7 @@ static void shell_loop() {
 		if (DEBUG) Lexer_print(&lexer);
 		
 		// parser
-		Parser_init(&parser, &lexer);
-		ret = Parser_pipeline(&parser);
+		ret = Parser_pipeline(&parser, &lexer);
 		if (ret == -1) {
 			if (DEBUG) printf("Parser line error, skip.\n");
 			Lexer_clear(&lexer);
@@ -74,7 +74,7 @@ static void shell_loop() {
 	Parser_clear(&parser);
 	Lexer_clear(&lexer);
 	if (line) free(line);
-	Executor_clear(&executor);
+	Executor_destroy(&executor);
 	return ;
 }
 
