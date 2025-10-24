@@ -138,6 +138,41 @@ void Executor_init(Executor *e) {
 		e->shell_pgid = 0;
 }
 
+void Executor_destroy(Executor *e) {
+	for (int i = 0; i < MAX_JOBS; ++i) {
+		Job *j = e->jobs.table[i];
+		if (!j || j->state == JOB_DONE) continue;
+
+		// SIGHUP
+		kill(-j->pgid, SIGHUP);
+
+		// SIGCONT for STOPPED jobs
+		if (j->state == JOB_STOPPED)
+			kill(-j->pgid, SIGCONT);
+	}
+
+	// clean termination
+	usleep(250000);
+	for (int i = 0; i < MAX_JOBS; ++i) {
+		Job *j = e->jobs.table[i];
+		if (!j || j->state == JOB_DONE) continue;
+		kill(-j->pgid, SIGTERM);
+	}
+
+	// force kill
+	usleep(250000);
+	for (int i = 0; i < MAX_JOBS; ++i) {
+		Job *j = e->jobs.table[i];
+		if (!j || j->state == JOB_DONE) continue;
+		kill(-j->pgid, SIGKILL);
+	}
+
+	// prevent zombies
+	while (waitpid(-1, 0, WNOHANG) > 0) ;
+
+	Executor_clear(e);
+}
+
 void Executor_clear(Executor *e) {
 	JobsTable_destroy(&e->jobs);
 	IntHashTable_clear(&e->process_map);

@@ -15,6 +15,7 @@ typedef struct {
 
 void Executor_init(Executor *e);
 void Executor_clear(Executor *e);
+void Executor_destroy(Executor *e);
 void Executor_print(Executor *e);
 
 void Executor_exe(Executor *e, ListHead *pipeline, char *line);
