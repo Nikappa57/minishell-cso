@@ -349,3 +349,11 @@ Serve per impostare una variabile d'ambiente (usando `setenv`). Se non viene pas
 - `pwd`
 
 Stampa la directory attuale (usando `getcwd`).
+
+## Prompt
+
+Appena avviata la shell, vengono mostrati il nome `Minishell CSO` e il livello della shell (SHLVL)
+
+Il prompt mostra il nome della directory corrente ($PWD), il branch della repo git (se presente) e indica se l'ultimo comando è terminato con un codice diverso da 0, in base al colore delle `>>`.
+
+Per ottenere il branch, si usa il comando `git branch --show-current 2>/dev/null`, avviato tramite `popen`, che apre una pipe stream con il processo avviato.  Il nome del branch viene letto con `fgets()` dalla pipe.
