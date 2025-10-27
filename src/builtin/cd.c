@@ -1,11 +1,11 @@
 # include "builtin.h"
 # include "env.h"
 
-int	ft_cd(Executor *e, Command *cmd)
-{
+int	ft_cd(Executor *e, Command *cmd) {
 	char	*path;
 
 	(void)e;
+	g_exit_code = 0;
 	// cd
 	if (cmd->argc == 1) {
 		path = getenv("HOME");

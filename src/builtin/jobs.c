@@ -11,6 +11,7 @@ static void job_print(Executor *e, Job *j) {
 }
 
 int ft_jobs(Executor *e, Command *cmd) {
+	g_exit_code = 0;
 	
 	// no args -> print all jobs
 	if (cmd->argc == 1) {

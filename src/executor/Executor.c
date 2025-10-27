@@ -205,9 +205,6 @@ void Executor_print(Executor *e) {
 void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
 
-	// reset exit code
-	g_exit_code = 0;
-
 	int ret;
 	Command *first = (Command *) pipeline->first;
 	assert(first && "Executor_exe | invalid cast");
@@ -217,6 +214,9 @@ void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 	// run in parent process if it's a builtin (also only redirections) and there is only one cmd
 	if ((b_fn || first->argc == 0) && pipeline->size == 1)
 		return (_Executor_parent(e, first, b_fn));
+
+	// reset exit code
+	g_exit_code = 0;
 
 	// create pipes
 	int pipes_n = (pipeline->size == 1) ? 0 : pipeline->size - 1;

@@ -3,6 +3,8 @@
 # include <signal.h>
 
 int ft_bg(Executor *e, Command *cmd) {
+	g_exit_code = 0;
+
 	// check if shell is interactive
 	if (!e->interactive)
 		return (error(1, "bg: no job control"), 0);

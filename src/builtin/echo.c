@@ -7,6 +7,7 @@ int	ft_echo(Executor *e, Command *cmd) {
 	bool	add_newline = true;
 
 	(void)e;
+	g_exit_code = 0;
 	if (cmd->argc == 1) {
 		printf("\n");
 		return (0);
