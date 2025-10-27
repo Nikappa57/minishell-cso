@@ -321,3 +321,31 @@ Se viene intercettato e gestito diversamente, questo segnale non porta alla chiu
 Infine per sicurezza si invia il segnale SIGKILL per forzare la chiusura del processo.
 
 E' importante anche usare waitpid alla fine per non lasciare processi zombie in attesa.
+
+
+## Builtins base
+
+- `cd [path]`
+
+Serve per cambiare directory a quella passata per argomento (con `chdir`). Senza argomenti viene usata la `$HOME`. Se viene passato `-` si usa `$OLDPWD`.
+Infine vengono aggiornate le variabili `$OLDPWD` e `$PWD`.
+
+- `echo [-n] [args]`
+
+Stampa in console gli args. Se viene passato -n non va a capo alla fine della stringa.
+
+- `exit [code]`
+
+Chiude la shell, il valore di uscita sarà il codice passato se presente.
+
+- `env`
+
+Stampa tutte le variabili d'ambiente
+
+- `export [key=value]`
+
+Serve per impostare una variabile d'ambiente (usando `setenv`). Se non viene passato alcun argomento, ha lo stesso comportamento di `env`.
+
+- `pwd`
+
+Stampa la directory attuale (usando `getcwd`).
