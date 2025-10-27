@@ -9,7 +9,7 @@ Questo progetto consiste nell'implementazione di una shell bash-like, con le seg
 - altre builtin base (cd, echo, exit, pwd)
 
 
-## main loop
+## Main loop
 
 la pipeline è la seguente:
 - update jobs
@@ -24,12 +24,11 @@ la pipeline è la seguente:
 ## Readline
 man: get a line from a user with editing
 
-### readline dep
 ```bash
 sudo apt-get install libreadline-dev
 ```
 
-### utilizzo
+### Utilizzo
 
 Permette di poter leggere in input una stringa, ammettendo editing (emacs style).
 Gestisce la history dei comandi (add_history).
@@ -133,6 +132,7 @@ can't
 
 ### sintassi
 
+```
 line := pipeline
 
 pipeline := cmd {T_PIPE cmd};
@@ -144,6 +144,7 @@ item := T_WORD
 		| T_RED_OUT_APP	T_WORD
 		| T_RED_IN		T_WORD
 		| T_HEREDOC		T_WORD;
+```
 
 #### Note
 
@@ -172,9 +173,9 @@ Il parser mantiene nello stato solo il token corrente (current_token) e la pipel
 Si occupa di espandere le variabili d'ambiente, sia negli args del comando che nelle redirections
 
 gestisce:
-$KEY -> valore da getenv()
-$? -> exit code dell'ultimo comando
-~ -> equivalente a $HOME se messa all'inizio del token e $HOME è settato
+\$KEY -> valore da getenv()
+\$? -> exit code dell'ultimo comando
+~ -> equivalente a \$HOME se messa all'inizio del token e \$HOME è settato
 
 vengono gestite le quotes:
 se si è all'interno di single quotes, non vi è espansione
@@ -303,9 +304,9 @@ Se non viene passato un id, viene usato il current job.
 
 Per aggiornare lo stato dei job nel caso in cui un job in background termini, prima e dopo readline viene richiamata una routine che si mette in wait di aggiornamenti dei processi figli.
 Si usa waitpid con le seguenti flags:
-- WNOHANG: per avere un comportamento non bloccante
-- WUNTRACED: se un figlio riceve SIGSTOP o SIGTSTP, il padre riceve la notifica
-- WCONTINUED: segnala anche i figli che erano sospesi e sono stati ripresi (SIGCONT)
+- `WNOHANG`: per avere un comportamento non bloccante
+- `WUNTRACED`: se un figlio riceve SIGSTOP o SIGTSTP, il padre riceve la notifica
+- `WCONTINUED`: segnala anche i figli che erano sospesi e sono stati ripresi (SIGCONT)
 
 Per accedere al job tramite il pid restituito da waitpid, si usa l'hash table pid_tab, che mappa i pid ai job. Quindi si aggiorna lo stato del job.
 
