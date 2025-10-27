@@ -139,6 +139,8 @@ void Executor_init(Executor *e) {
 }
 
 void Executor_destroy(Executor *e) {
+	bool updates = 0;
+
 	for (int i = 0; i < MAX_JOBS; ++i) {
 		Job *j = e->jobs.table[i];
 		if (!j || j->state == JOB_DONE) continue;
@@ -149,18 +151,28 @@ void Executor_destroy(Executor *e) {
 		// SIGCONT for STOPPED jobs
 		if (j->state == JOB_STOPPED)
 			kill(-j->pgid, SIGCONT);
+		updates = 1;
 	}
 
 	// clean termination
-	usleep(250000);
+	if (updates) {
+		usleep(100000);
+		Executor_update_jobs(e);
+		updates = 0;
+	}
 	for (int i = 0; i < MAX_JOBS; ++i) {
 		Job *j = e->jobs.table[i];
 		if (!j || j->state == JOB_DONE) continue;
 		kill(-j->pgid, SIGTERM);
+		updates = 1;
 	}
 
 	// force kill
-	usleep(250000);
+	if (updates) {
+		usleep(500000);
+		Executor_update_jobs(e);
+		updates = 0;
+	}
 	for (int i = 0; i < MAX_JOBS; ++i) {
 		Job *j = e->jobs.table[i];
 		if (!j || j->state == JOB_DONE) continue;
