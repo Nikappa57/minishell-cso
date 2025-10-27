@@ -12,8 +12,8 @@ typedef struct {
 	Token		*current_token;
 }	Parser;
 
-void		Parser_init(Parser *p, ListHead *token_list);
-int			Parser_pipeline(Parser *p);
+void		Parser_init(Parser *p);
+int			Parser_pipeline(Parser *p, ListHead *token_list);
 void		Parser_clear(Parser *p);
 void		Parser_print(Parser *p);
 

@@ -5,38 +5,6 @@
 # include "Pipeline.h"
 # include "signals.h"
 
-void Executor_init(Executor *e) {
-	List_init(&e->jobs);
-
-	// man: test whether a file descriptor refers to a terminal
-	e->interactive = isatty(STDIN_FILENO);
-	e->tty_fd = STDIN_FILENO;
-	if (e->interactive) {
-		// set gpid = pid for the shell process
-		e->shell_pgid = getpid();
-		setpgid(0, e->shell_pgid);
-		// 
-		tcsetpgrp(e->tty_fd, e->shell_pgid);
-
-		set_shell_signals();
-	}
-}
-
-void Executor_clear(Executor *e) {
-	// jobs list clear
-	if (e->jobs.size && e->jobs.first) {
-		ListItem *aux = e->jobs.first;
-		while (aux) {
-			Job *j_item = (Job *) aux;
-			assert(j_item && "Lexer_clear | invalid token cast");
-			aux = aux->next;
-			Job_clear(j_item);
-			free(j_item);
-		}
-		List_init(&e->jobs);
-	}
-}
-
 static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 
 	(void)e;
@@ -60,7 +28,7 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 
 	// run cmd
 	if (b_fn) {
-		ret = b_fn(cmd); // set g_exit_code
+		ret = b_fn(e, cmd); // set g_exit_code
 		if (ret != 0) fprintf(stderr, "buildin failed\n");
 	}
 	else
@@ -73,12 +41,63 @@ static void _Executor_parent(Executor *e, Command *cmd, builtin_fn b_fn) {
 	return ;
 }
 
-static void _Executor_child(Executor *e, Command *cmd) {
+static void _Executor_child(Executor *e, Job *j, Command *cmd, int p_idx, int *pipes, int pipes_n) {
+	int ret;
+
+	// set signals
+	set_child_signals();
+
+	// set pgid
+	// first: new group pgid = pid
+	if (p_idx == 0) {
+		ret = setpgid(0, 0);
+		if (ret == -1) {
+			error(1, "setpgid (first): %s", strerror(errno));
+			_exit(g_exit_code);
+		}
+	}
+	// others: join in the first process group
+	else {
+		assert(j->pgid != -1 && "Executor_exe | Job pgid is not set");
+		ret = setpgid(0, j->pgid);
+		if (ret == -1) {
+			error(1, "setpgid: %s", strerror(errno));
+			_exit(g_exit_code);
+		}
+	}
+
+	// set pipe
+	if (pipes_n) {
+		// in
+		if (p_idx > 0) { // skip first for input
+			assert(pipes[(p_idx - 1) * 2] > 2 && "Executor_exe | invalid pipe (in)");
+			ret = dup2(pipes[(p_idx - 1) * 2], STDIN_FILENO);
+			if (ret < 0) {
+				error(1, "dup2(pipe in): %s", strerror(errno));
+				_exit(g_exit_code);
+			}
+		}
+		// out
+		if (p_idx < j->pipeline->size - 1) { // skip last for output
+			assert(pipes[p_idx * 2 + 1] > 2 && "Executor_exe | invalid pipe (out)");
+			ret = dup2(pipes[p_idx * 2 + 1], STDOUT_FILENO);
+			if (ret < 0) {
+				error(1, "dup2(pipe out): %s", strerror(errno));
+				_exit(g_exit_code);
+			}
+		}
+		ret = close_pipes(pipes, pipes_n);
+		if (ret == -1) {
+			if (DEBUG) fprintf(stderr, "close pipe error");
+			_exit(g_exit_code);
+		}
+	}
+
 	(void)e;
 	if (DEBUG) if (DEBUG) printf("*** CHILD ***\n");
 
 	// redirections
-	int ret = redirections_apply(cmd);
+	ret = redirections_apply(cmd);
 	if (ret == -1) return ;
 	if (cmd->argc == 0) {
 		g_exit_code = 0;
@@ -88,7 +107,7 @@ static void _Executor_child(Executor *e, Command *cmd) {
 	// builtin
 	builtin_fn b_fn = find_builtin(cmd);
 	if (b_fn) {
-		ret = b_fn(cmd); // set g_exit_code
+		ret = b_fn(e, cmd); // set g_exit_code
 		if (ret != 0) fprintf(stderr, "buildin failed\n");
 		return ;
 	}
@@ -100,7 +119,90 @@ static void _Executor_child(Executor *e, Command *cmd) {
 		error(126, "Command error: %s: ", cmd->argv[0], strerror(errno));
 }
 
-void Executor_exe(Executor *e, ListHead *pipeline) {
+
+void Executor_init(Executor *e) {
+	// man: test whether a file descriptor refers to a terminal
+	e->interactive = isatty(STDIN_FILENO);
+	e->tty_fd = STDIN_FILENO;
+	JobTable_init(&e->jobs);
+	IntHashTable_init(&e->process_map);
+	if (e->interactive) {
+		// set gpid = pid for the shell process
+		e->shell_pgid = getpid();
+		int ret = setpgid(0, e->shell_pgid);
+		if (ret == -1) handle_error("Executor_init | setpgid error");
+		// give terminal to shell
+		give_terminal_to(e->shell_pgid, e->tty_fd);
+	}
+	else
+		e->shell_pgid = 0;
+}
+
+void Executor_destroy(Executor *e) {
+	bool updates = 0;
+
+	for (int i = 0; i < MAX_JOBS; ++i) {
+		Job *j = e->jobs.table[i];
+		if (!j || j->state == JOB_DONE) continue;
+
+		// SIGHUP
+		kill(-j->pgid, SIGHUP);
+
+		// SIGCONT for STOPPED jobs
+		if (j->state == JOB_STOPPED)
+			kill(-j->pgid, SIGCONT);
+		updates = 1;
+	}
+
+	// clean termination
+	if (updates) {
+		usleep(100000);
+		Executor_update_jobs(e);
+		updates = 0;
+	}
+	for (int i = 0; i < MAX_JOBS; ++i) {
+		Job *j = e->jobs.table[i];
+		if (!j || j->state == JOB_DONE) continue;
+		kill(-j->pgid, SIGTERM);
+		updates = 1;
+	}
+
+	// force kill
+	if (updates) {
+		usleep(500000);
+		Executor_update_jobs(e);
+		updates = 0;
+	}
+	for (int i = 0; i < MAX_JOBS; ++i) {
+		Job *j = e->jobs.table[i];
+		if (!j || j->state == JOB_DONE) continue;
+		kill(-j->pgid, SIGKILL);
+	}
+
+	// prevent zombies
+	while (waitpid(-1, 0, WNOHANG) > 0) ;
+
+	Executor_clear(e);
+}
+
+void Executor_clear(Executor *e) {
+	JobsTable_destroy(&e->jobs);
+	IntHashTable_clear(&e->process_map);
+}
+
+void Executor_print(Executor *e) {
+	printf("*** Executor ***\n");
+	printf("interactive: %s\n", e->interactive ? "yes" : "no");
+	printf("tty fd: %d | shell pgid: %d\n", e->tty_fd, e->shell_pgid);
+	printf("JOBS table:\n");
+	for (int i = 0; i < MAX_JOBS; ++i) {
+		Job *j = e->jobs.table[i];
+		if (j) Job_print(j);
+	}
+	IntHashTable_print(&e->process_map);
+}
+
+void Executor_exe(Executor *e, ListHead *pipeline, char *line) {
 	assert(pipeline && pipeline->size > 0 && "Invalid pipeline");
 
 	// reset exit code
@@ -114,82 +216,189 @@ void Executor_exe(Executor *e, ListHead *pipeline) {
 	
 	// run in parent process if it's a builtin (also only redirections) and there is only one cmd
 	if ((b_fn || first->argc == 0) && pipeline->size == 1)
-		return _Executor_parent(e, first, b_fn);
+		return (_Executor_parent(e, first, b_fn));
 
 	// create pipes
-	int n_pipes = (pipeline->size == 1) ? 0 : pipeline->size - 1;
-	int pipes[2 * (n_pipes > 0 ? n_pipes : 1)];
-	ret = create_pipes(pipes, n_pipes);
+	int pipes_n = (pipeline->size == 1) ? 0 : pipeline->size - 1;
+	int pipes[2 * (pipes_n > 0 ? pipes_n : 1)];
+	ret = create_pipes(pipes, pipes_n);
 	if (ret == -1) {
 		if (DEBUG) fprintf(stderr, "create pipe error");
 		return ;
 	}
 
-	// create new job
-	Job j;
-	Job_init(&j, pipeline);
-	// List_insert(&e->jobs, e->jobs.last, &j.list);
+	Job *j = JobsTable_add(&e->jobs, pipeline, line);
+	if (!j) return ;
 
 	int idx = 0;
 	for (ListItem *it = pipeline->first; it; it = it->next, ++idx) {
-		Command *c = (Command*)it;
+		Command *c = (Command *) it;
 		assert(first && "Executor_exe | invalid cast");
+
+		// ignore signals
+		set_shell_signals_exe();
 
 		pid_t pid = fork();
 		if (pid == -1) { // error
-			Job_clear(&j);
-			close_pipes(pipes, n_pipes);
+			close_pipes(pipes, pipes_n);
 			error(1, "fork error: %s", strerror(errno));
+			j->state = JOB_DONE;
 			return ;
 		}
-		else if (pid == 0) { // child
-			// set pipe
-			if (n_pipes) {
-				// in
-				if (idx > 0) { // skip first for input
-					assert(pipes[(idx - 1) * 2] > 2 && "Executor_exe | invalid pipe (in)");
-					ret = dup2(pipes[(idx - 1) * 2], STDIN_FILENO);
-					if (ret < 0) {
-						error(1, "dup2(pipe in): %s", strerror(errno));
-						_exit(g_exit_code);
-					}
-				}
-				// out
-				if (idx < pipeline->size - 1) { // skip last for output
-					assert(pipes[idx * 2 + 1] > 2 && "Executor_exe | invalid pipe (out)");
-					ret = dup2(pipes[idx * 2 + 1], STDOUT_FILENO);
-					if (ret < 0) {
-						error(1, "dup2(pipe out): %s", strerror(errno));
-						_exit(g_exit_code);
-					}
-				}
-				ret = close_pipes(pipes, n_pipes);
-				if (ret == -1) {
-					if (DEBUG) fprintf(stderr, "close pipe error");
-					_exit(g_exit_code);
-				}
-			}
-			_Executor_child(e, c);
+		// child
+		else if (pid == 0) {
+			_Executor_child(e, j, c, idx, pipes, pipes_n);
+			Pipeline_clear(pipeline);
+			Executor_clear(e);
 			_exit(g_exit_code);
 		}
-		else { // parent
-			// create new process
-			Job_add_process(&j, pid);
+		// parent
+		else {
+			// if first: save the new pgid
+			if (idx == 0) j->pgid = pid;
+
+			// set pgid of child also in the parent process
+			ret = setpgid(pid, j->pgid);
+			if (ret == -1) error(1, "setpgid (parent): %s", strerror(errno));
+
+			// create a new process
+			Job_add_process(j, pid);
+			// add pid to table
+			IntHashTable_add(&e->process_map, pid, j->idx);
 		}
 	}
+
 	// close pipe
-	ret = close_pipes(pipes, n_pipes);
+	ret = close_pipes(pipes, pipes_n);
 	if (ret == -1) {
 		if (DEBUG) fprintf(stderr, "close pipe error");
 		return ;
 	}
-	// wait job
-	Job_wait(&j); // set g_exit_code
-	Job_clear(&j);
 
-	ret = close_pipes(pipes, n_pipes);
-	if (ret == -1) {
-		if (DEBUG) fprintf(stderr, "create pipe error");
-		return ;
+	// give terminal to the new process
+	if (e->interactive) give_terminal_to(j->pgid, e->tty_fd);
+
+	// wait job
+	Executor_wait_job(e, j);
+
+	// give terminal to shell
+	if (e->interactive) give_terminal_to(e->shell_pgid, e->tty_fd);
+}
+
+void Executor_wait_job(Executor *e, Job *j) {
+	int		last_status	= 0;
+
+	// setup signals
+	set_shell_signals_exe();
+
+	while (j->alive_process > 0) {
+		int status = 0;
+
+		// wait for any process in the group
+		pid_t w_pid = waitpid(-j->pgid, &status, WUNTRACED);
+		if (w_pid < 0) {
+			if (errno == EINTR) continue ;
+			return ; // no process to wait
+		}
+
+		// CTR-Z : job stopped
+		if (WIFSTOPPED(status)) {
+			if (j->state != JOB_STOPPED) {
+				j->state = JOB_STOPPED;					// update state
+				j->background = false;
+				j->stop_rank = ++(e->jobs.max_rank);	// increase stop_rank
+				e->jobs.current = j;					// set as current job
+				fprintf(stderr, "\n[%d]  Stopped\n", (int)j->idx + 1);
+				g_exit_code = (unsigned char)(128 + WSTOPSIG(status)); // 148 for SIGTSTP
+			}
+			return ; // leave the job in the jobs table
+		}
+
+		// if process is finished, reduce alive_process
+		if (WIFEXITED(status) || WIFSIGNALED(status)) {
+			// save last command status
+			if (w_pid == j->last_pid) last_status = status;
+			--(j->alive_process);
+			// remove pid from pid-process table
+			IntHashTable_remove(&e->process_map, w_pid);
+		}
+	}
+
+	assert(j->alive_process == 0 && "_Executor_wait_job | alive_process is not zero");
+
+	// set job as done
+	// alive_process = 0 => job is done
+	j->state = JOB_DONE;
+
+	// update exit code
+	// terminated normally
+	if (WIFEXITED(last_status))
+		g_exit_code = (unsigned char) WEXITSTATUS(last_status);
+	// killed by signals
+	else if (WIFSIGNALED(last_status)) {
+		int sig = WTERMSIG(last_status);
+		g_exit_code = (unsigned char)(128 + sig);
+		if (sig == SIGINT) fprintf(stderr, "\n");
+		if (sig == SIGQUIT) fprintf(stderr, "Quit (core dumped)\n");
+	}
+	else
+		g_exit_code = 1;
+
+	JobsTable_remove(&e->jobs, j);
+}
+
+void Executor_update_jobs(Executor *e) {
+	IntHashTable	*pid_tab = &e->process_map;
+	JobsTable		*job_tab = &e->jobs;
+
+	while (42) {
+		int status;
+		pid_t pid = waitpid(-1, &status, WNOHANG | WUNTRACED | WCONTINUED);
+		if (pid == 0) break ;
+		if (pid < 0) {
+			if (errno == EINTR) continue ;
+			break ; // no process to wait
+		}
+
+		// get job index
+		const int *j_idx = IntHashTable_get(pid_tab, pid);
+		if (! j_idx) {
+			error(1, "[%d] unknown child terminated [1]", pid);
+			continue ;
+		}
+		
+		// get job obj
+		Job *j = job_tab->table[*j_idx];
+		if (! j) {
+			error(1, "[%d] unknown child terminated [2]", pid);
+			continue ;
+		}
+
+		// CTR-Z : job stopped
+		if (WIFSTOPPED(status)) {
+			if (j->state != JOB_STOPPED) {
+				j->state = JOB_STOPPED;
+				j->background = false;
+				j->stop_rank = ++(job_tab->max_rank);	// increase stop_rank
+				job_tab->current = j;					// set as current job
+				fprintf(stderr, "[%d] %s Stopped\n", (int)j->idx + 1, j->cmd_str);
+			}
+		}
+		// process is finished
+		else if (WIFEXITED(status) || WIFSIGNALED(status)) {
+			--(j->alive_process);
+			// remove pid from pid-process table
+			IntHashTable_remove(pid_tab, pid);
+
+			// check if the job is done
+			if (j->alive_process <= 0) {
+				j->state = JOB_DONE;
+				// the job remain in the jobs table until next jobs cmd
+				fprintf(stderr, "[%d] %s Done\n", (int)j->idx + 1, j->cmd_str);
+			}
+		}
+		else if (WIFCONTINUED(status)) {
+			j->state = JOB_RUNNING;
+		}
 	}
 }

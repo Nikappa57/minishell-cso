@@ -1,5 +1,6 @@
 # include "env.h"
 # include "Command.h"
+# include "utils.h"
 
 // $...
 static void expander_key(char **str, char **result) {
@@ -15,8 +16,8 @@ static void expander_key(char **str, char **result) {
 	}
 	// $?
 	if (**str == '?') {
-		char code_str[32];
-		snprintf(code_str, sizeof(code_str),"%d", g_exit_code);
+		char code_str[4];
+		snprintf(code_str, sizeof(code_str), "%d", g_exit_code);
 		str_append(result, code_str);
 		++*str; // skip ?
 		return ;
@@ -36,17 +37,14 @@ static void expander_key(char **str, char **result) {
 		return ;
 	}
 	// copy key
-	char *key = (char *) malloc(len + 1);
-	if (! key) handle_error("expander_key | malloc error");
-
-	strncpy(key, *str, len);
-	key[len] = 0;
+	char *key = (char *) strndup(*str, len);
+	if (! key) handle_error("expander_key | strndup error");
 	// get val
 	const char *val = getenv(key);
 	str_append(result, val);
 	free(key);
 	(*str) += len; // skip key
-}	
+}
 
 // MARK_SQ ... MARK_SQ
 static void copy_until_sq(char **str, char **result) {
@@ -55,7 +53,7 @@ static void copy_until_sq(char **str, char **result) {
 	++*str; // skip MARK_SQ
 	char *next_sq = strchr(*str, MARK_SQ);
 	assert(next_sq && "copy_until_sq | unclosed quotes"); // check in lexer
-	
+
 	*next_sq = 0;
 	str_append(result, *str);
 	*str = next_sq + 1; // skip quote

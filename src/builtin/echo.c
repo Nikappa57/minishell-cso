@@ -2,10 +2,11 @@
 
 // echo (-n) args
 // if -n -> no newline
-int	ft_echo(Command *cmd) {
+int	ft_echo(Executor *e, Command *cmd) {
 	char	**argv;
 	bool	add_newline = true;
 
+	(void)e;
 	if (cmd->argc == 1) {
 		printf("\n");
 		return (0);

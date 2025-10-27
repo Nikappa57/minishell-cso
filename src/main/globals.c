@@ -1,4 +1,5 @@
 # include "common.h"
+# include "builtin.h"
 
 unsigned char	g_exit_code = EXIT_SUCCESS;
 bool			g_alive = true;
@@ -10,3 +11,18 @@ const char*		TokenType_str[] =	{"|", "<", ">", ">>",
 										"<<", "word", "newline"};
 const char*		RedType_repr[] =	{"R_IN", "R_OUT", "R_APP", "R_HD"};
 const char*		RedType_str[] =		{"<", ">", ">>", "<<"};
+const char*		JobState_str[] =	{"RUNNING", "STOPPED", "DONE"};
+
+const builtin BUILTINS[] = {
+	{"cd",		ft_cd},
+	{"env",		ft_env},
+	{"export",	ft_export},
+	{"unset",	ft_unset},
+	{"exit",	ft_exit},
+	{"echo",	ft_echo},
+	{"pwd",		ft_pwd},
+	{"jobs",	ft_jobs},
+	{"fg",		ft_fg},
+	{"bg",		ft_bg},
+	{0, 0}
+};

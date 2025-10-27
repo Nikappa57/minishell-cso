@@ -39,7 +39,7 @@ void heredoc_pipeline(ListHead *pipeline) {
 		for (ListItem* r_aux = c_item->redirections.first; r_aux; r_aux = r_aux->next) {
 			Redirection *r_item = (Redirection *) (r_aux);
 			assert(r_item && "expander_pipeline | invalid redirection cast");
-			
+
 			if (r_item->type == R_HD) {
 				// get hdoc fd
 				int fd = heredoc_fd(r_item->filename);

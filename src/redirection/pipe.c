@@ -27,7 +27,6 @@ int create_pipes(int pipes[], int n_pipes) {
 			close_pipes(pipes, n_pipes);
 			return (-1);
 		}
-		fprintf(stderr, "create_pipes: pipe[%d]: read=%d write=%d\n", i, pipes[i * 2], pipes[i * 2 + 1]);
 	}
 	return (0);
 }

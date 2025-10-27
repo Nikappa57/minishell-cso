@@ -1,10 +1,12 @@
 # include "builtin.h"
+# include "utils.h"
 
 /*
 *	print error
 *	exit with exit code
 */
-int	ft_exit(Command *cmd) {
+int	ft_exit(Executor *e, Command *cmd) {
+	(void)e;
 	fprintf(stderr, "exit\n");
 
 	if ((cmd->argc >= 2) && (! str_isdigit(cmd->argv[1])))
