@@ -34,7 +34,7 @@ int	ft_cd(Executor *e, Command *cmd) {
 	char	buf[PATH_MAX];
 	// get new pwd
 	if (! getcwd(buf, sizeof(buf)))
-		return (1);
+		return (error(1, "cd: getcwd: %s", strerror(errno)),1);
 	env_export("OLDPWD", getenv("PWD"));
 	env_export("PWD", buf);
 	return (0);
