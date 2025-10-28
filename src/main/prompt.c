@@ -17,7 +17,7 @@ char* get_prompt_string() {
 	char *path = getenv("PWD");
 	if (path) {
 		char *slash = strrchr(path, '/');
-		folder = slash ? slash + 1 : path;
+		folder = slash && strlen(path) > 1 ? slash + 1 : path;
 		if (!*folder) folder = "?";
 	}
 	
