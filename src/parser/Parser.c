@@ -33,7 +33,7 @@ void Parser_error(Parser *p) {
 		token_str = TokenType_str[t->type];
 	else
 		token_str = t->text;
-	error(2, "Syntax error: unexpected token '%s'\n", token_str);
+	error(2, "Syntax error: unexpected token '%s'", token_str);
 }
 
 /*

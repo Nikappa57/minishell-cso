@@ -85,7 +85,7 @@ int Lexer_line(ListHead *l, char *str) {
 	if (!str || !*str)
 		return (-1);
 	if (strlen(str) > MAX_LINE_LEN)
-		return (error(1, "lexer error: max line length\n"), -1);
+		return (error(1, "lexer error: max line length"), -1);
 
 	while (42) {
 		skip_ws(&str);

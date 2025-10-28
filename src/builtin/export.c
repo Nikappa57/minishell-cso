@@ -10,7 +10,7 @@ int	ft_export(Executor *e, Command *cmd)
 
 	for (int i = 1; cmd->argv[i]; i++) {
 		if (cmd->argv[i][0] == '=') {
-			error(1, "export: `%s': not a valid identifier\n", cmd->argv[i]);
+			error(1, "export: `%s': not a valid identifier", cmd->argv[i]);
 			continue;
 		}
 
