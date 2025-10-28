@@ -10,7 +10,7 @@ static int heredoc_fd(char *end) {
 	while (42) {
 		line = readline("> ");
 		if (!line) {
-			fprintf(stderr, "error: warning: here-document at line 1 delimited by end-of-file (wanted `%s')", end);
+			fprintf(stderr, "warning: here-document at line 1 delimited by end-of-file (wanted `%s')\n", end);
 			break ;
 		}
 		if (strcmp(line, end) == 0) {
