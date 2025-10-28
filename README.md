@@ -357,3 +357,126 @@ Appena avviata la shell, vengono mostrati il nome `Minishell CSO` e il livello d
 Il prompt mostra il nome della directory corrente ($PWD), il branch della repo git (se presente) e indica se l'ultimo comando è terminato con un codice diverso da 0, in base al colore delle `>>`.
 
 Per ottenere il branch, si usa il comando `git branch --show-current 2>/dev/null`, avviato tramite `popen`, che apre una pipe stream con il processo avviato.  Il nome del branch viene letto con `fgets()` dalla pipe.
+
+## TEST
+
+- cd & pwd
+
+```bash
+cd /
+pwd
+cd -      # torna a OLDPWD
+pwd
+cd        # va in $HOME
+```
+
+- echo
+
+```bash
+echo ciao mondo
+echo -n no-newline
+echo "a  b" c      # spazi preservati in DQ
+echo '$HOME'       # no espansione in SQ
+```
+
+- env
+
+```bash
+export FOO=bar
+env | grep '^FOO='
+unset FOO
+env | grep '^FOO='
+```
+
+- exit
+
+```bash
+exit 7
+echo $?
+```
+
+- lexer & expander
+
+```bash
+echo a\ \ b \| "a  b" \| 'a  b'
+echo 'can'\''t'
+echo "test\"quote"
+echo $HOME "$HOME" '$HOME'
+
+export X=1
+echo $X
+echo $?
+echo ~ 
+```
+
+- redirections
+
+```bash
+echo hi > out
+cat out
+echo a >> out
+cat < out
+echo x > a > b # solo l’ultima deve contenere output
+cat a
+cat b 
+```
+
+- pipe
+
+```bash
+echo ciao | tr a-z A-Z
+printf "a\nb\n" | grep b | wc -l
+cat | cat | echo ciao
+```
+
+- heredoc
+
+```bash
+cat <<EOF
+riga1
+riga2
+EOF
+```
+
+- job control
+
+```bash
+sleep 10
+# Ctrl+Z
+jobs            # deve mostrare STOPPED
+fg              # riprende in foreground
+```
+
+
+```bash
+sleep 3 | sleep 3
+# Ctrl+Z
+bg
+jobs             # RUNNING
+```
+
+- Segnali e aggiornamento dei jobs
+
+```bash
+yes > /dev/null
+# Ctrl+Z
+kill -CONT <pid>
+jobs   # RUNNING
+```
+
+- Errori sintassi 
+
+```bash
+|
+echo a |
+echo >        # redirection senza parola
+echo "unclosed
+```
+ 
+- Errore permessi
+
+```bash
+mkdir d
+chmod -w d
+echo x > d/f
+```
